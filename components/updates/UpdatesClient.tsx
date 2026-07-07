@@ -51,8 +51,11 @@ export function UpdatesClient() {
   }
 
   useEffect(() => {
+    // Fetching live weather when the modal opens is the desired behavior;
+    // the "loading" state set at the top of loadLiveWeather is intentional,
+    // not a cascading-render bug.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (showForm) loadLiveWeather()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showForm])
 
   const filtered = useMemo(() => {
