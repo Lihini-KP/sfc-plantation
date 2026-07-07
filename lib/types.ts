@@ -7,15 +7,11 @@ export type Severity = 'low' | 'medium' | 'high' | 'critical'
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'overdue'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type UserRole =
-  | 'Super Admin'
-  | 'Plantation Manager'
-  | 'Farm Supervisor'
+  | 'Admin'
+  | 'Director'
+  | 'Assistant Factory Manager'
   | 'Field Officer'
-  | 'Livestock Supervisor'
-  | 'Store Keeper'
   | 'Worker'
-  | 'Finance'
-  | 'Management'
 
 export interface AppUser {
   id: string

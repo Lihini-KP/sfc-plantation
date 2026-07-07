@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { RoleProvider } from "@/lib/role-context";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AppShell } from "@/components/layout/AppShell";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,10 +23,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-background text-foreground">
         <RoleProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            {children}
-          </div>
+          <AppShell>{children}</AppShell>
         </RoleProvider>
       </body>
     </html>

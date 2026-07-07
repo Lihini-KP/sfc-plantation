@@ -1,27 +1,25 @@
 import type { AppUser, UserRole } from '@/lib/types'
 
-// Role categories for the "Preview as Role" switcher - these are just
-// labels for previewing the UI, not tied to any specific person.
+// Role categories - reflects the estate's actual organizational structure
+// as confirmed. Used both for login and for the "Preview as Role" switcher.
 export const roles: UserRole[] = [
-  'Super Admin',
-  'Plantation Manager',
-  'Farm Supervisor',
+  'Admin',
+  'Director',
+  'Assistant Factory Manager',
   'Field Officer',
-  'Livestock Supervisor',
-  'Store Keeper',
   'Worker',
-  'Finance',
-  'Management',
 ]
 
-// Only real, confirmed names go here. We know these six do field/harvest
-// work on the estate; we don't have confirmed job titles for them or names
-// for the other role categories above, so nothing is invented to fill them.
+// Real, confirmed people only.
 export const users: AppUser[] = [
-  { id: 'u-1', name: 'R Thambiraja', role: 'Worker', avatarInitials: 'RT' },
-  { id: 'u-2', name: 'W A A N Wijesooriya', role: 'Worker', avatarInitials: 'WW' },
-  { id: 'u-3', name: 'N M G Dharmasena', role: 'Worker', avatarInitials: 'ND' },
-  { id: 'u-4', name: 'W.G. Dissanayaka', role: 'Worker', avatarInitials: 'WD' },
-  { id: 'u-5', name: 'Malar Kanthi', role: 'Worker', avatarInitials: 'MK' },
-  { id: 'u-6', name: 'Richard', role: 'Worker', avatarInitials: 'R' },
+  { id: 'u-1', name: 'Lihini Kavindi', role: 'Admin', avatarInitials: 'LK' },
+  { id: 'u-2', name: 'Sahan Bakmiwewa', role: 'Director', avatarInitials: 'SB' },
+  { id: 'u-3', name: 'Dhanusha Herath', role: 'Assistant Factory Manager', avatarInitials: 'DH' },
+  { id: 'u-4', name: 'Arushika Devindi', role: 'Field Officer', avatarInitials: 'AD' },
+  { id: 'u-5', name: 'R Thambiraja', role: 'Worker', avatarInitials: 'RT' },
+  { id: 'u-6', name: 'W A A N Wijesooriya', role: 'Worker', avatarInitials: 'WW' },
+  { id: 'u-7', name: 'N M G Dharmasena', role: 'Worker', avatarInitials: 'ND' },
+  { id: 'u-8', name: 'W.G. Dissanayaka', role: 'Worker', avatarInitials: 'WD' },
+  { id: 'u-9', name: 'Malar Kanthi', role: 'Worker', avatarInitials: 'MK' },
+  { id: 'u-10', name: 'Richard', role: 'Worker', avatarInitials: 'R' },
 ]

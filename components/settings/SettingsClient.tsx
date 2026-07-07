@@ -31,8 +31,8 @@ export function SettingsClient() {
 
       <Card>
         <CardHeader
-          title="Known Staff"
-          subtitle="Real names only - confirmed field/harvest workers. Job titles for other roles (Plantation Manager, Finance, etc.) aren't confirmed yet, so no names are shown for those."
+          title="Team Directory"
+          subtitle="Real names and confirmed roles."
           action={<UserCog size={18} className="text-brand-600" />}
         />
         <div className="overflow-x-auto">
