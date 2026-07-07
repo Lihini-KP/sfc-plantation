@@ -30,7 +30,11 @@ export function SettingsClient() {
       </Card>
 
       <Card>
-        <CardHeader title="Team Directory" subtitle="Sample users with role-based access" action={<UserCog size={18} className="text-brand-600" />} />
+        <CardHeader
+          title="Known Staff"
+          subtitle="Real names only - confirmed field/harvest workers. Job titles for other roles (Plantation Manager, Finance, etc.) aren't confirmed yet, so no names are shown for those."
+          action={<UserCog size={18} className="text-brand-600" />}
+        />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[480px] text-sm">
             <thead>

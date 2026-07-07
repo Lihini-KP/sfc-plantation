@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Menu } from 'lucide-react'
+import { Bell, Menu, UserCircle } from 'lucide-react'
 import { useRole } from '@/lib/role-context'
 import { notifications } from '@/lib/mock-data'
 import Link from 'next/link'
@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { MobileNav } from './MobileNav'
 
 export function Topbar({ title }: { title: string }) {
-  const { role, userName } = useRole()
+  const { role } = useRole()
   const unread = notifications.filter((n) => !n.read).length
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -34,11 +34,11 @@ export function Topbar({ title }: { title: string }) {
           )}
         </Link>
         <div className="flex items-center gap-2 border-l border-brand-100 pl-4">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
-            {userName.split(' ').map((n) => n[0]).join('')}
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+            <UserCircle size={19} />
           </span>
           <div className="hidden sm:block">
-            <p className="text-sm font-medium text-brand-800 leading-tight">{userName}</p>
+            <p className="text-sm font-medium text-brand-800 leading-tight">Previewing as</p>
             <p className="text-xs text-brand-700/50 leading-tight">{role}</p>
           </div>
         </div>

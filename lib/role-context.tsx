@@ -2,20 +2,19 @@
 
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import type { UserRole } from '@/lib/types'
-import { currentUser } from '@/lib/mock-data'
+import { roles } from '@/lib/mock-data'
 
 interface RoleContextValue {
   role: UserRole
   setRole: (role: UserRole) => void
-  userName: string
 }
 
 const RoleContext = createContext<RoleContextValue | null>(null)
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<UserRole>(currentUser.role)
+  const [role, setRole] = useState<UserRole>(roles[0])
   return (
-    <RoleContext.Provider value={{ role, setRole, userName: currentUser.name }}>
+    <RoleContext.Provider value={{ role, setRole }}>
       {children}
     </RoleContext.Provider>
   )
