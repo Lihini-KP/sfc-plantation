@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f6f2;
+  --foreground: #17251c;
+
+  --color-brand-50: #eef7ee;
+  --color-brand-100: #d4ecd5;
+  --color-brand-200: #a9d9ac;
+  --color-brand-300: #7cc182;
+  --color-brand-400: #4fa858;
+  --color-brand-500: #2f8a3d;
+  --color-brand-600: #15803d;
+  --color-brand-700: #173b2e;
+  --color-brand-800: #12291f;
+  --color-brand-900: #0c1b15;
+
+  --color-earth-50: #faf7f2;
+  --color-earth-100: #f0e9dc;
+  --color-earth-200: #e0d0b4;
+  --color-earth-300: #c9ac7c;
+  --color-earth-400: #ad8452;
+
+  --color-status-healthy: #15803d;
+  --color-status-attention: #d4a72c;
+  --color-status-moderate: #e07b2c;
+  --color-status-critical: #dc2626;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-50: var(--color-brand-50);
+  --color-brand-100: var(--color-brand-100);
+  --color-brand-200: var(--color-brand-200);
+  --color-brand-300: var(--color-brand-300);
+  --color-brand-400: var(--color-brand-400);
+  --color-brand-500: var(--color-brand-500);
+  --color-brand-600: var(--color-brand-600);
+  --color-brand-700: var(--color-brand-700);
+  --color-brand-800: var(--color-brand-800);
+  --color-brand-900: var(--color-brand-900);
+  --color-earth-50: var(--color-earth-50);
+  --color-earth-100: var(--color-earth-100);
+  --color-earth-200: var(--color-earth-200);
+  --color-earth-300: var(--color-earth-300);
+  --color-earth-400: var(--color-earth-400);
+  --color-status-healthy: var(--color-status-healthy);
+  --color-status-attention: var(--color-status-attention);
+  --color-status-moderate: var(--color-status-moderate);
+  --color-status-critical: var(--color-status-critical);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-200);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
