@@ -12,6 +12,8 @@ import {
   Bell,
   Sparkles,
   Settings,
+  Tent,
+  FileSpreadsheet,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -25,6 +27,8 @@ export const navItems: NavItem[] = [
   { href: '/updates', label: 'Daily Updates', icon: NotebookPen },
   { href: '/map', label: 'Plantation Map', icon: Map },
   { href: '/crops', label: 'Crop Management', icon: Leaf },
+  { href: '/tunnels', label: 'Tunnels', icon: Tent },
+  { href: '/crop-plan', label: 'Crop Plan', icon: FileSpreadsheet },
   { href: '/tasks', label: 'Task Management', icon: ListChecks },
   { href: '/harvests', label: 'Harvest Management', icon: Wheat },
   { href: '/chicken-farm', label: 'Chicken Farm', icon: Bird },
