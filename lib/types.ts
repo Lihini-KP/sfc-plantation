@@ -83,7 +83,7 @@ export interface DailyUpdate {
 export interface PlantationTask {
   id: string
   title: string
-  category: 'Watering' | 'Fertilizer' | 'Weeding' | 'Spraying' | 'Harvesting' | 'Cleaning' | 'Maintenance'
+  category: 'Watering' | 'Fertilizer' | 'Weeding' | 'Spraying' | 'Harvesting' | 'Cleaning' | 'Maintenance' | 'Reporting' | 'Planting'
   assignedTo: string
   areaId?: string
   dueDate: string
