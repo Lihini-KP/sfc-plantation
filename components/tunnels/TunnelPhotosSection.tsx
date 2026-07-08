@@ -34,17 +34,38 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
     }
   }, [tunnelId])
 
+  function readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.readAsDataURL(file)
+    })
+  }
+
+  function compressImage(dataUrl: string, maxDimension = 1280, quality = 0.75): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxDimension / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { resolve(dataUrl); return }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = reject
+      img.src = dataUrl
+    })
+  }
+
   function handleFiles(files: FileList | null) {
     if (!files) return
-    const readers = Array.from(files).slice(0, 2).map(
-      (file) =>
-        new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result as string)
-          reader.readAsDataURL(file)
-        })
-    )
-    Promise.all(readers).then((urls) => {
+    const compressed = Array.from(files)
+      .slice(0, 2)
+      .map((file) => readFileAsDataUrl(file).then((dataUrl) => compressImage(dataUrl)))
+    Promise.all(compressed).then((urls) => {
       setPendingPhotos(urls)
       setAnalysisResult(null)
       setAnalysisError('')
@@ -61,7 +82,12 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tunnelName, cropName, photos }),
       })
-      const data = await res.json()
+      let data
+      try {
+        data = await res.json()
+      } catch {
+        throw new Error(res.status === 413 ? 'Photos were too large to send for analysis.' : `Analysis failed (server returned status ${res.status}).`)
+      }
       if (!res.ok) throw new Error(data.error || 'Analysis failed.')
       setAnalysisResult(data)
     } catch (err) {
