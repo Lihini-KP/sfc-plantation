@@ -7,7 +7,7 @@ import { SeverityBadge } from '@/components/ui/Badge'
 import { ScoreRing, ProgressBar } from '@/components/ui/ProgressBar'
 import { areas } from '@/lib/mock-data/areas'
 import { aiAnalyses } from '@/lib/mock-data/aiInsights'
-import { chatHistory, mockAiReply } from '@/lib/mock-data/aiInsights'
+import { chatHistory } from '@/lib/mock-data/aiInsights'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
 import type { ChatMessage } from '@/lib/types'
 
@@ -18,13 +18,31 @@ export function AiInsightsClient() {
 
   const [messages, setMessages] = useState<ChatMessage[]>(chatHistory)
   const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
 
-  function send() {
-    if (!input.trim()) return
-    const userMsg: ChatMessage = { id: `m-${Date.now()}`, role: 'user', content: input, timestamp: new Date().toISOString() }
-    const reply: ChatMessage = { id: `m-${Date.now() + 1}`, role: 'assistant', content: mockAiReply(input), timestamp: new Date().toISOString() }
-    setMessages((prev) => [...prev, userMsg, reply])
+  async function send() {
+    if (!input.trim() || sending) return
+    const question = input
+    const userMsg: ChatMessage = { id: `m-${Date.now()}`, role: 'user', content: question, timestamp: new Date().toISOString() }
+    setMessages((prev) => [...prev, userMsg])
     setInput('')
+    setSending(true)
+    try {
+      const res = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      })
+      const data = await res.json()
+      const replyText = res.ok ? data.reply : `${data.error} Contact the Admin if this keeps happening.`
+      const reply: ChatMessage = { id: `m-${Date.now() + 1}`, role: 'assistant', content: replyText, timestamp: new Date().toISOString() }
+      setMessages((prev) => [...prev, reply])
+    } catch {
+      const reply: ChatMessage = { id: `m-${Date.now() + 1}`, role: 'assistant', content: 'Something went wrong reaching the AI assistant. Please try again.', timestamp: new Date().toISOString() }
+      setMessages((prev) => [...prev, reply])
+    } finally {
+      setSending(false)
+    }
   }
 
   const trendIcon = analysis.historicalComparison.trend === 'improving' ? TrendingUp : analysis.historicalComparison.trend === 'declining' ? TrendingDown : Minus
@@ -132,6 +150,7 @@ export function AiInsightsClient() {
 
         <Card className="flex h-[640px] flex-col">
           <CardHeader title="AI Chat Assistant" subtitle="Ask about any area, harvest timing, or fertilizer needs" />
+          <p className="mb-2 text-[10px] text-brand-700/40">Real Claude-powered answers, reasoning over the zone data on this page (which is still illustrative sample data, not live sensor readings).</p>
           <div className="flex-1 space-y-3 overflow-y-auto pr-1">
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -141,6 +160,11 @@ export function AiInsightsClient() {
                 </div>
               </div>
             ))}
+            {sending && (
+              <div className="flex justify-start">
+                <div className="max-w-[85%] rounded-2xl bg-brand-50 px-3.5 py-2.5 text-sm text-brand-700/50">Thinking...</div>
+              </div>
+            )}
           </div>
           <div className="mt-3 flex gap-2">
             <input
@@ -148,9 +172,10 @@ export function AiInsightsClient() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send()}
               placeholder="e.g. When should I harvest Area C?"
-              className="flex-1 rounded-xl border border-brand-100 px-3 py-2.5 text-sm"
+              disabled={sending}
+              className="flex-1 rounded-xl border border-brand-100 px-3 py-2.5 text-sm disabled:opacity-60"
             />
-            <button onClick={send} className="flex items-center justify-center rounded-xl bg-brand-600 px-3.5 text-white hover:bg-brand-700">
+            <button onClick={send} disabled={sending} className="flex items-center justify-center rounded-xl bg-brand-600 px-3.5 text-white hover:bg-brand-700 disabled:opacity-50">
               <Send size={16} />
             </button>
           </div>

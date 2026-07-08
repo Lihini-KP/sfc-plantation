@@ -305,17 +305,3 @@ export const chatHistory: ChatMessage[] = [
     timestamp: '2026-07-06T09:00:05',
   },
 ]
-
-export function mockAiReply(question: string): string {
-  const q = question.toLowerCase()
-  if (q.includes('harvest')) {
-    return 'Gurmar - South Block is closest to harvest at 91% readiness, expected 15 July. Passion Fruit should be harvested early on 16 July due to disease pressure, even though yield will be reduced.'
-  }
-  if (q.includes('yellow') || q.includes('rot')) {
-    return 'The Soursop & Ginger plot is showing early signs of rhizome rot risk from waterlogging. The AI recommends improving bed drainage and reducing watering frequency for the next 2 weeks.'
-  }
-  if (q.includes('fertilizer')) {
-    return 'Passion Fruit is overdue for NPK 15:15:15 (18kg) - apply immediately. Banana needs NPK 14:14:14 by 20 July. Gurmar and Moringa plots are on schedule.'
-  }
-  return 'Based on the latest weekly analysis, overall plantation health is strongest in Gurmar - South Block (93%) and weakest in the Passion Fruit plot (42%, critical). Ask me about a specific zone, harvest timing, or fertilizer needs for a more detailed answer.'
-}
