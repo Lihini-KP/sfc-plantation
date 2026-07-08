@@ -46,6 +46,10 @@ export function InventoryClient() {
 
       <Card>
         <CardHeader title="Inventory" subtitle={`${filtered.length} items`} />
+        {filtered.length === 0 && (
+          <p className="py-8 text-center text-sm text-brand-700/40">No inventory tracked yet - items will appear here once stock records are added.</p>
+        )}
+        {filtered.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
@@ -79,6 +83,7 @@ export function InventoryClient() {
             </tbody>
           </table>
         </div>
+        )}
       </Card>
     </div>
   )

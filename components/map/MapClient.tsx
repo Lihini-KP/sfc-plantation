@@ -223,7 +223,7 @@ export function MapClient() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-base font-semibold text-brand-800">{selectedArea.name}</p>
-                <p className="text-xs text-brand-700/50">{selectedArea.gpsLocation}</p>
+                <p className="text-xs text-brand-700/50">{selectedArea.gpsLocation || 'GPS not yet surveyed'}</p>
               </div>
               <button onClick={() => setSelection(null)} className="rounded-lg p-1.5 hover:bg-brand-50"><X size={16} /></button>
             </div>

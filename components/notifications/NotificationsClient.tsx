@@ -49,6 +49,11 @@ export function NotificationsClient() {
           </button>
         </div>
         <div className="space-y-2">
+          {items.length === 0 && (
+            <p className="py-8 text-center text-sm text-brand-700/40">
+              No notifications yet - this will populate once real alerts (low stock, overdue tasks, weather warnings) are wired up.
+            </p>
+          )}
           {items.map((n) => (
             <div
               key={n.id}

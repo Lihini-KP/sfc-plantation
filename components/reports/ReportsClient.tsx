@@ -5,6 +5,7 @@ import { FileText, FileSpreadsheet, CheckCircle2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { totalIncome, totalExpenses, totalProfitLoss } from '@/lib/mock-data/finance'
 import { totalIncomeByCrop } from '@/lib/mock-data/cropSales'
+import { tasks } from '@/lib/mock-data/tasks'
 import { formatCurrency } from '@/lib/format'
 
 function buildReports() {
@@ -12,17 +13,18 @@ function buildReports() {
   const expenses = totalExpenses()
   const profitLoss = totalProfitLoss()
   const topCrop = totalIncomeByCrop()[0]
+  const assignees = new Set(tasks.map((t) => t.assignedTo))
 
   return [
-    { title: 'Plantation Performance', summary: '15 zones tracked, avg. AI health score 77% (illustrative - pending real inspections)' },
-    { title: 'Crop Health', summary: '15 mapped zones, 1 critical alert this week (Passion Fruit) - illustrative sample analysis' },
+    { title: 'Plantation Performance', summary: '15 zones mapped from the real estate layout - health scores are illustrative, pending real inspections' },
+    { title: 'Crop Health', summary: 'Illustrative sample analysis only - no real vision pipeline connected yet' },
     { title: 'Harvest Yield', summary: 'See Harvest & Sales Income for real recorded sales by crop' },
     { title: 'Revenue', summary: `${formatCurrency(income)} recorded income (16 months, P&L sheet)` },
     { title: 'Expenses', summary: `${formatCurrency(expenses)} recorded expenses (16 months, P&L sheet)` },
-    { title: 'Fertilizer Usage', summary: 'Compost & organic manure across mapped zones (not itemized in P&L sheet)' },
-    { title: 'Water Consumption', summary: 'Drip, manual & rain-fed across 15 mapped zones' },
-    { title: 'Pest Incidents', summary: '4 active pest issues flagged this week - illustrative sample analysis' },
-    { title: 'Employee Productivity', summary: '6 field staff, 8 tasks logged this week' },
+    { title: 'Fertilizer Usage', summary: 'Not itemized in any real source yet' },
+    { title: 'Water Consumption', summary: 'Not itemized in any real source yet' },
+    { title: 'Pest Incidents', summary: 'No real pest tracking source connected yet' },
+    { title: 'Employee Productivity', summary: `${assignees.size} staff with real tasks logged (${tasks.length} tasks, from ATLAS/Task Commander history)` },
     { title: 'Chicken Performance', summary: 'Not yet operational - planned to start this month (July 2026)' },
     { title: 'Egg Production', summary: 'No production yet - farm not operational' },
     { title: 'Profitability', summary: `Net ${profitLoss >= 0 ? 'profit' : 'loss'} of ${formatCurrency(Math.abs(profitLoss))} over 16 months - top crop by income: ${topCrop?.cropName}` },

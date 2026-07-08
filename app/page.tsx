@@ -43,7 +43,7 @@ export default function DashboardPage() {
         <StatCard label="Needs Attention" value={s.attentionPlants.toLocaleString()} icon={AlertTriangle} tone="warn" />
         <StatCard label="Harvest Ready Areas" value={`${s.harvestReadyAreas}`} icon={Wheat} />
         <StatCard label="Upcoming Harvests" value={`${s.upcomingHarvests}`} icon={CalendarClock} tone="earth" />
-        <StatCard label="Weekly Production Est." value={`${s.weeklyProductionEstimateKg} kg`} icon={Gauge} />
+        <StatCard label="Weekly Production Est. (AI)" value={`${s.weeklyProductionEstimateKg} kg`} icon={Gauge} hint="Illustrative forecast" />
         <StatCard label="Active Tasks" value={`${s.activeTasks}`} icon={ListChecks} tone="earth" />
       </div>
 
@@ -105,6 +105,9 @@ export default function DashboardPage() {
         <Card>
           <CardHeader title="Daily Notifications" subtitle={`${unreadNotifications.length} unread`} />
           <div className="space-y-3">
+            {unreadNotifications.length === 0 && (
+              <p className="py-4 text-center text-sm text-brand-700/40">No notifications yet.</p>
+            )}
             {unreadNotifications.map((n) => (
               <div key={n.id} className="flex items-start justify-between gap-3 rounded-xl border border-brand-100 p-3">
                 <div>
@@ -122,7 +125,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader title="AI Recommendations" action={<Sparkles size={18} className="text-brand-600" />} />
+          <CardHeader title="AI Recommendations" subtitle="Illustrative sample analysis - no real vision pipeline yet" action={<Sparkles size={18} className="text-brand-600" />} />
           <div className="space-y-3">
             {topRecommendations.map((a) => (
               <div key={a.areaId} className="rounded-xl border border-brand-100 p-3">
