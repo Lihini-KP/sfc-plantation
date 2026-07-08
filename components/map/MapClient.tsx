@@ -1,17 +1,35 @@
 'use client'
 
-import { useState } from 'react'
-import { X, MapPin, Sparkles, Building2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { X, MapPin, Sparkles, Building2, Pencil } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { HealthBadge } from '@/components/ui/Badge'
 import { ScoreRing } from '@/components/ui/ProgressBar'
-import { areas } from '@/lib/mock-data/areas'
+import { areas as baseAreas } from '@/lib/mock-data/areas'
 import { facilities } from '@/lib/mock-data/facilities'
 import { crops } from '@/lib/mock-data/crops'
 import { cropSales } from '@/lib/mock-data/cropSales'
 import { getAnalysisForArea } from '@/lib/mock-data/aiInsights'
 import { formatDate, formatCurrency } from '@/lib/format'
-import type { HealthStatus } from '@/lib/types'
+import type { HealthStatus, PlantationArea } from '@/lib/types'
+
+const STORAGE_KEY = 'sfc-area-overrides'
+
+type EditableFields = Pick<
+  PlantationArea,
+  | 'plantCount'
+  | 'variety'
+  | 'growthStage'
+  | 'healthStatus'
+  | 'plantingDate'
+  | 'expectedHarvestDate'
+  | 'lastInspection'
+  | 'irrigationMethod'
+  | 'fertilizerSchedule'
+  | 'diseaseStatus'
+  | 'pestStatus'
+  | 'assignedStaff'
+>
 
 const zoneBorder: Record<HealthStatus, string> = {
   healthy: '#15803d',
@@ -56,6 +74,7 @@ const FACILITY_ICON: Record<string, string> = {
   'small-animal-sheds': '🐇',
   'greenhouse-9600ft': '⛺',
   'compost-area': '♻️',
+  'chicken-farm': '🐔',
 }
 
 function iconCountFor(width: number, height: number) {
@@ -63,15 +82,62 @@ function iconCountFor(width: number, height: number) {
 }
 
 type Selection = { type: 'area' | 'facility'; id: string } | null
+type Overrides = Record<string, Partial<EditableFields>>
 
 export function MapClient() {
   const [selection, setSelection] = useState<Selection>(null)
+  const [overrides, setOverrides] = useState<Overrides>({})
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<EditableFields | null>(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- loading persisted state on mount, not derived from props/state
+      try { setOverrides(JSON.parse(saved)) } catch { /* ignore corrupt storage */ }
+    }
+  }, [])
+
+  const areas = baseAreas.map((a) => (overrides[a.id] ? { ...a, ...overrides[a.id] } : a))
 
   const selectedArea = selection?.type === 'area' ? areas.find((a) => a.id === selection.id) : undefined
   const selectedFacility = selection?.type === 'facility' ? facilities.find((f) => f.id === selection.id) : undefined
   const selectedCrop = selectedArea ? crops.find((c) => c.id === selectedArea.cropId) : undefined
   const selectedAnalysis = selectedArea ? getAnalysisForArea(selectedArea.id) : undefined
   const cropKeyword = selectedCrop?.name.split(' ')[0].toLowerCase()
+
+  function startEdit() {
+    if (!selectedArea) return
+    setDraft({
+      plantCount: selectedArea.plantCount,
+      variety: selectedArea.variety,
+      growthStage: selectedArea.growthStage,
+      healthStatus: selectedArea.healthStatus,
+      plantingDate: selectedArea.plantingDate,
+      expectedHarvestDate: selectedArea.expectedHarvestDate,
+      lastInspection: selectedArea.lastInspection,
+      irrigationMethod: selectedArea.irrigationMethod,
+      fertilizerSchedule: selectedArea.fertilizerSchedule,
+      diseaseStatus: selectedArea.diseaseStatus,
+      pestStatus: selectedArea.pestStatus,
+      assignedStaff: selectedArea.assignedStaff,
+    })
+    setEditing(true)
+  }
+
+  function saveEdit() {
+    if (!selectedArea || !draft) return
+    const updated = { ...overrides, [selectedArea.id]: draft }
+    setOverrides(updated)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    setEditing(false)
+    setDraft(null)
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+    setDraft(null)
+  }
   const selectedSales = cropKeyword ? cropSales.filter((r) => r.cropName.toLowerCase().includes(cropKeyword)) : []
 
   return (
@@ -107,7 +173,7 @@ export function MapClient() {
               return (
                 <button
                   key={f.id}
-                  onClick={() => setSelection({ type: 'facility', id: f.id })}
+                  onClick={() => { setSelection({ type: 'facility', id: f.id }); cancelEdit() }}
                   className="absolute flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-md border p-0.5 text-center shadow-sm transition-transform hover:z-10 hover:scale-[1.04]"
                   style={{
                     left: `${f.mapX}%`, top: `${f.mapY}%`, width: `${f.mapWidth}%`, height: `${f.mapHeight}%`,
@@ -132,7 +198,7 @@ export function MapClient() {
               return (
                 <button
                   key={area.id}
-                  onClick={() => setSelection({ type: 'area', id: area.id })}
+                  onClick={() => { setSelection({ type: 'area', id: area.id }); cancelEdit() }}
                   className="absolute overflow-hidden rounded-lg border-2 shadow-sm transition-transform hover:z-10 hover:scale-[1.03]"
                   style={{
                     left: `${area.mapX}%`, top: `${area.mapY}%`, width: `${area.mapWidth}%`, height: `${area.mapHeight}%`,
@@ -225,7 +291,14 @@ export function MapClient() {
                 <p className="text-base font-semibold text-brand-800">{selectedArea.name}</p>
                 <p className="text-xs text-brand-700/50">{selectedArea.gpsLocation || 'GPS not yet surveyed'}</p>
               </div>
-              <button onClick={() => setSelection(null)} className="rounded-lg p-1.5 hover:bg-brand-50"><X size={16} /></button>
+              <div className="flex items-center gap-1">
+                {!editing && (
+                  <button onClick={startEdit} className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50">
+                    <Pencil size={13} /> Edit
+                  </button>
+                )}
+                <button onClick={() => { setSelection(null); cancelEdit() }} className="rounded-lg p-1.5 hover:bg-brand-50"><X size={16} /></button>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <ScoreRing value={selectedArea.aiHealthScore} />
@@ -234,21 +307,53 @@ export function MapClient() {
                 <p className="mt-1 text-xs text-brand-700/50">AI Health Score</p>
               </div>
             </div>
-            <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-              <Field label="Size" value={`${selectedArea.sizeAcres} ac`} />
-              <Field label="Plant Count" value={selectedArea.plantCount.toLocaleString()} />
-              <Field label="Crop" value={selectedCrop?.name || '—'} />
-              <Field label="Variety" value={selectedArea.variety} />
-              <Field label="Planting Date" value={formatDate(selectedArea.plantingDate)} />
-              <Field label="Expected Harvest" value={formatDate(selectedArea.expectedHarvestDate)} />
-              <Field label="Growth Stage" value={selectedArea.growthStage} />
-              <Field label="Last Inspection" value={formatDate(selectedArea.lastInspection)} />
-              <Field label="Irrigation" value={selectedArea.irrigationMethod} />
-              <Field label="Fertilizer Schedule" value={selectedArea.fertilizerSchedule} />
-              <Field label="Disease Status" value={selectedArea.diseaseStatus} full />
-              <Field label="Pest Status" value={selectedArea.pestStatus} full />
-              <Field label="Assigned Staff" value={selectedArea.assignedStaff.join(', ')} full />
-            </dl>
+
+            {editing && draft ? (
+              <div className="space-y-3 rounded-xl border border-brand-100 p-3">
+                <EditField label="Plant Count" type="number" value={draft.plantCount} onChange={(v) => setDraft({ ...draft, plantCount: Number(v) })} />
+                <EditField label="Variety" value={draft.variety} onChange={(v) => setDraft({ ...draft, variety: v })} />
+                <EditField label="Growth Stage" value={draft.growthStage} onChange={(v) => setDraft({ ...draft, growthStage: v })} />
+                <EditSelect
+                  label="Health Status"
+                  value={draft.healthStatus}
+                  options={['healthy', 'attention', 'moderate', 'critical']}
+                  onChange={(v) => setDraft({ ...draft, healthStatus: v as HealthStatus })}
+                />
+                <EditField label="Planting Date" type="date" value={draft.plantingDate} onChange={(v) => setDraft({ ...draft, plantingDate: v })} />
+                <EditField label="Expected Harvest" type="date" value={draft.expectedHarvestDate} onChange={(v) => setDraft({ ...draft, expectedHarvestDate: v })} />
+                <EditField label="Last Inspection" type="date" value={draft.lastInspection} onChange={(v) => setDraft({ ...draft, lastInspection: v })} />
+                <EditField label="Irrigation" value={draft.irrigationMethod} onChange={(v) => setDraft({ ...draft, irrigationMethod: v })} />
+                <EditField label="Fertilizer Schedule" value={draft.fertilizerSchedule} onChange={(v) => setDraft({ ...draft, fertilizerSchedule: v })} />
+                <EditField label="Disease Status" value={draft.diseaseStatus} onChange={(v) => setDraft({ ...draft, diseaseStatus: v })} />
+                <EditField label="Pest Status" value={draft.pestStatus} onChange={(v) => setDraft({ ...draft, pestStatus: v })} />
+                <EditField
+                  label="Assigned Staff (comma-separated)"
+                  value={draft.assignedStaff.join(', ')}
+                  onChange={(v) => setDraft({ ...draft, assignedStaff: v.split(',').map((s) => s.trim()).filter(Boolean) })}
+                />
+                <div className="flex gap-2 pt-1">
+                  <button onClick={saveEdit} className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700">Save</button>
+                  <button onClick={cancelEdit} className="rounded-lg px-3 py-1.5 text-xs font-medium text-brand-700/70 hover:bg-brand-50">Cancel</button>
+                </div>
+                <p className="text-[10px] text-brand-700/40">Saved to this browser only for now - needs the Supabase connection wired in to sync across devices.</p>
+              </div>
+            ) : (
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                <Field label="Size" value={`${selectedArea.sizeAcres} ac`} />
+                <Field label="Plant Count" value={selectedArea.plantCount.toLocaleString()} />
+                <Field label="Crop" value={selectedCrop?.name || '—'} />
+                <Field label="Variety" value={selectedArea.variety} />
+                <Field label="Planting Date" value={formatDate(selectedArea.plantingDate)} />
+                <Field label="Expected Harvest" value={formatDate(selectedArea.expectedHarvestDate)} />
+                <Field label="Growth Stage" value={selectedArea.growthStage} />
+                <Field label="Last Inspection" value={formatDate(selectedArea.lastInspection)} />
+                <Field label="Irrigation" value={selectedArea.irrigationMethod} />
+                <Field label="Fertilizer Schedule" value={selectedArea.fertilizerSchedule} />
+                <Field label="Disease Status" value={selectedArea.diseaseStatus} full />
+                <Field label="Pest Status" value={selectedArea.pestStatus} full />
+                <Field label="Assigned Staff" value={selectedArea.assignedStaff.join(', ')} full />
+              </dl>
+            )}
 
             {selectedAnalysis && (
               <div className="rounded-xl bg-brand-50 p-3">
@@ -286,5 +391,34 @@ function Field({ label, value, full }: { label: string; value: string; full?: bo
       <dt className="text-xs text-brand-700/50">{label}</dt>
       <dd className="text-brand-800">{value}</dd>
     </div>
+  )
+}
+
+function EditField({ label, value, onChange, type = 'text' }: { label: string; value: string | number; onChange: (v: string) => void; type?: 'text' | 'number' | 'date' }) {
+  return (
+    <label className="block text-xs">
+      <span className="mb-1 block font-medium text-brand-700/70">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-brand-100 px-2.5 py-1.5 text-sm text-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-600/30"
+      />
+    </label>
+  )
+}
+
+function EditSelect({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  return (
+    <label className="block text-xs">
+      <span className="mb-1 block font-medium text-brand-700/70">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-brand-100 px-2.5 py-1.5 text-sm capitalize text-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-600/30"
+      >
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </label>
   )
 }

@@ -11,6 +11,7 @@ export const facilities: FacilityPoint[] = [
   { id: 'solar-dryer-02', name: 'Solar Dryer 02', category: 'structure', description: 'Solar drying unit for harvested herbs.', mapX: 40, mapY: 46, mapWidth: 6, mapHeight: 12 },
   { id: 'solar-dryer-03', name: 'Solar Dryer 03', category: 'structure', description: 'Solar drying unit for harvested herbs.', mapX: 40, mapY: 58, mapWidth: 6, mapHeight: 12 },
   { id: 'nursery', name: 'Nursery', category: 'structure', description: 'Seedling propagation area for all crops.', mapX: 20, mapY: 70, mapWidth: 8, mapHeight: 15 },
+  { id: 'chicken-farm', name: 'Chicken Farm', category: 'structure', description: 'Former Mushroom House, converted to the chicken farm. Not yet operational - planned to start July 2026.', mapX: 0, mapY: 70, mapWidth: 11, mapHeight: 15 },
   { id: 'loom-house', name: 'Loom House', category: 'facility', description: 'Handicraft weaving unit.', mapX: 28, mapY: 70, mapWidth: 5, mapHeight: 15 },
   { id: 'container-3', name: 'Container 3', category: 'facility', description: 'Processing and cold storage container.', mapX: 33, mapY: 70, mapWidth: 7, mapHeight: 15 },
   { id: 'summer-hut', name: 'Summer Hut', category: 'facility', description: 'Staff rest area.', mapX: 40, mapY: 70, mapWidth: 6, mapHeight: 15 },
