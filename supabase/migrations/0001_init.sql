@@ -13,8 +13,7 @@ create table app_users (
   auth_user_id uuid references auth.users(id) on delete set null,
   name text not null,
   role text not null check (role in (
-    'Super Admin','Plantation Manager','Farm Supervisor','Field Officer',
-    'Livestock Supervisor','Store Keeper','Worker','Finance','Management'
+    'Admin','Director','Assistant Factory Manager','Field Officer','Worker'
   )),
   avatar_initials text,
   created_at timestamptz not null default now()
@@ -143,7 +142,7 @@ create table daily_updates (
 create table plantation_tasks (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  category text check (category in ('Watering','Fertilizer','Weeding','Spraying','Harvesting','Cleaning','Maintenance')),
+  category text check (category in ('Watering','Fertilizer','Weeding','Spraying','Harvesting','Cleaning','Maintenance','Reporting','Planting')),
   assigned_to text,
   area_id text references plantation_areas(id) on delete set null,
   due_date date,
@@ -164,6 +163,21 @@ create table harvest_log (
   quantity_kg numeric not null,
   confidence text check (confidence in ('high','low')) default 'high',
   source text default 'manual ledger transcription',
+  created_at timestamptz not null default now()
+);
+
+-- Weekly tunnel photo uploads + AI vision analysis (Claude, manual-trigger
+-- pipeline for now - see app/api/analyze-tunnel-photo).
+create table tunnel_photo_logs (
+  id uuid primary key default gen_random_uuid(),
+  tunnel_id text references greenhouses(id) on delete cascade,
+  date date not null,
+  photos text[] not null default '{}',
+  health_assessment text,
+  detected_issues text[] not null default '{}',
+  recommended_actions text[] not null default '{}',
+  severity text check (severity in ('low','medium','high','critical')),
+  analyzed_by text,
   created_at timestamptz not null default now()
 );
 
@@ -328,7 +342,7 @@ begin
     select unnest(array[
       'app_users','estate_location','chicken_farm_status','crops','plantation_areas',
       'facilities','greenhouses','crop_plan','daily_updates','plantation_tasks',
-      'harvest_log','chicken_batches','egg_logs','feed_logs','vaccinations',
+      'harvest_log','tunnel_photo_logs','chicken_batches','egg_logs','feed_logs','vaccinations',
       'chicken_health_records','inventory_items','notifications','ai_analyses',
       'chat_messages','monthly_finance','recent_monthly_detail','bank_fund','crop_sales'
     ])
