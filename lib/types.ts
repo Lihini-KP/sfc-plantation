@@ -198,6 +198,18 @@ export interface AiCropAnalysis {
   historicalComparison: { improvementPct: number; trend: 'improving' | 'declining' | 'stable' }
 }
 
+export interface TunnelPhotoEntry {
+  id: string
+  tunnelId: string
+  date: string
+  photos: string[] // data URLs when uploaded client-side; needs real object storage for production
+  healthAssessment?: string
+  detectedIssues?: string[]
+  recommendedActions?: string[]
+  severity?: Severity
+  analyzedBy?: string // e.g. "Claude vision - manual review" vs a real automated pipeline later
+}
+
 export interface FacilityPoint {
   id: string
   name: string

@@ -3,6 +3,13 @@
 // place in the source data where a full expense breakdown exists, so this
 // is the first place in the app with a fully real (not estimated) profit
 // figure.
+//
+// IMPORTANT: the tunnel <-> crop pairing below was originally *inferred* by
+// matching sqft and planting/removal dates across two separate sheets (this
+// one and Sheet2) - it was never confirmed against reality. A real photo of
+// Tunnel Oregano on 2026-07-08 showed chili (Muriya), not Hot Dragon, so
+// that one row is corrected below. Alpha/Bravo/Charlie/Echo's crop
+// assignments are still unconfirmed inference, pending photos of each.
 export interface GreenhousePlot {
   id: string
   tunnel: string
@@ -79,7 +86,7 @@ export const greenhouses: GreenhousePlot[] = [
   {
     id: 'gh-oregano',
     tunnel: 'Oregano',
-    cropName: 'Hot Dragon',
+    cropName: 'Muriya',
     sqft: 2200,
     plantingDate: '2025-09-24',
     firstHarvestDate: '2025-12-15',

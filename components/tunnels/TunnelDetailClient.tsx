@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { NotebookPen, Sprout, Wheat, Wrench, Image as ImageIcon, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
+import { TunnelPhotosSection } from '@/components/tunnels/TunnelPhotosSection'
 import { formatCurrency, formatDate } from '@/lib/format'
 import type { GreenhousePlot } from '@/lib/mock-data/greenhouses'
 
@@ -84,7 +85,9 @@ export function TunnelDetailClient({ tunnel }: { tunnel: GreenhousePlot }) {
         </div>
       )}
 
-      {tab !== 'overview' && (
+      {tab === 'images' && <TunnelPhotosSection tunnelId={tunnel.id} tunnelName={tunnel.tunnel} cropName={tunnel.cropName} />}
+
+      {tab !== 'overview' && tab !== 'images' && (
         <Card>
           <CardHeader title={tabs.find((t) => t.key === tab)?.label ?? ''} />
           <p className="py-8 text-center text-sm text-brand-700/40">
