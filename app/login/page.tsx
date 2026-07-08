@@ -32,20 +32,11 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f0efe9] p-4">
       <div className="flex w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-xl">
-        {/* Visual panel - placeholder graphic until a real estate photo is provided */}
+        {/* Visual panel - real aerial photo of the estate */}
         <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden p-10 text-white lg:flex">
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, #173b2e 0%, #0c1b15 60%, #12291f 100%)' }} />
-          <svg className="absolute inset-0 h-full w-full opacity-40" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
-            <g stroke="#4fa858" strokeWidth="1.5" fill="none" opacity="0.6">
-              <path d="M200,460 L200,320 M200,320 L140,260 M200,320 L260,250 M140,260 L90,210 M140,260 L150,190 M260,250 L320,290 M260,250 L290,180" />
-            </g>
-            {[
-              [200, 460], [200, 320], [140, 260], [260, 250],
-              [90, 210], [150, 190], [320, 290], [290, 180],
-            ].map(([cx, cy], i) => (
-              <circle key={i} cx={cx} cy={cy} r={i === 0 ? 7 : 5} fill="#7cc182" />
-            ))}
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/estate-photo.jpg" alt="Aerial view of the SFC estate - tunnels, thatched structures and crop plots" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(12,27,21,0.75) 0%, rgba(12,27,21,0.25) 45%, rgba(12,27,21,0.85) 100%)' }} />
 
           <div className="relative z-10">
             <p className="text-3xl font-bold tracking-tight">SFC PLANTATION</p>
@@ -62,8 +53,8 @@ export default function LoginPage() {
               <span className="text-brand-300">Finance</span>
               <span className="text-white">, one platform.</span>
             </p>
-            <p className="mt-3 max-w-sm text-sm text-white/50">
-              Real field photography from the estate is coming soon - this panel is a placeholder until then.
+            <p className="mt-3 max-w-sm text-sm text-white/60">
+              A real aerial view of the estate - tunnels, thatched structures and crop plots.
             </p>
           </div>
         </div>
