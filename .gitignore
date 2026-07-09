@@ -45,3 +45,6 @@ supabase/.temp
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Google Drive folder-icon junk (this clone lives inside Google Drive)
+Icon?
