@@ -13,13 +13,12 @@ interface SpinePerson {
   initials: string
 }
 
-// Keyed by canonical SPINE email (lowercase).
+// Keyed by canonical SPINE email (lowercase) - sourced from sage.people.
 const SPINE_PEOPLE: Record<string, SpinePerson> = {
+  'hra@esilkroute.com.lk': { name: 'Lihini Kavindi', role: 'Admin', initials: 'LK' },
   'sahan@esilkroute.com.lk': { name: 'Sahan Bakmiwewa', role: 'Director', initials: 'SB' },
+  'procurement@plantbased.lk': { name: 'Dhanusha Herath', role: 'Assistant Factory Manager', initials: 'DH' },
   'field.plant.based@gmail.com': { name: 'Arushika Devindi', role: 'Field Officer', initials: 'AD' },
-  // TODO(spine): confirm Lihini's and Dhanusha's canonical SPINE emails once
-  // they are granted in App access, then fill these in. Until then they enter
-  // via the DEFAULT_ROLE below (or Admin if the token carries admin=true).
 }
 
 const DEFAULT_ROLE: UserRole = 'Field Officer'
