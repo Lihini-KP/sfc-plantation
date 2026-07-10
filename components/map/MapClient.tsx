@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, MapPin, Sparkles, Building2, Pencil } from 'lucide-react'
+import Link from 'next/link'
+import { X, MapPin, Sparkles, Building2, Pencil, ArrowRight } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { HealthBadge } from '@/components/ui/Badge'
 import { ScoreRing } from '@/components/ui/ProgressBar'
@@ -72,10 +73,14 @@ const FACILITY_ICON: Record<string, string> = {
   'summer-hut': '🛖',
   'kitchen': '🍳',
   'small-animal-sheds': '🐇',
-  'greenhouse-9600ft': '⛺',
+  'gh-alpha': '⛺',
+  'gh-bravo': '⛺',
+  'gh-charlie': '⛺',
   'compost-area': '♻️',
   'chicken-farm': '🐔',
 }
+
+const TUNNEL_FACILITY_IDS = new Set(['gh-alpha', 'gh-bravo', 'gh-charlie'])
 
 function iconCountFor(width: number, height: number) {
   return Math.max(6, Math.min(28, Math.round((width * height) / 35)))
@@ -281,6 +286,11 @@ export function MapClient() {
               <button onClick={() => setSelection(null)} className="rounded-lg p-1.5 hover:bg-brand-50"><X size={16} /></button>
             </div>
             <p className="text-sm text-brand-700/70">{selectedFacility.description}</p>
+            {TUNNEL_FACILITY_IDS.has(selectedFacility.id) && (
+              <Link href={`/tunnels/${selectedFacility.id}`} className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">
+                View Tunnel details <ArrowRight size={14} />
+              </Link>
+            )}
           </div>
         )}
 

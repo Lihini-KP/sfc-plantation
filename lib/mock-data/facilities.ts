@@ -19,6 +19,8 @@ export const facilities: FacilityPoint[] = [
   { id: 'kitchen', name: 'Kitchen', category: 'facility', description: 'Staff kitchen and dining area.', mapX: 15, mapY: 85, mapWidth: 15, mapHeight: 15 },
   { id: 'container-2', name: 'Container 2', category: 'facility', description: 'General storage container.', mapX: 30, mapY: 85, mapWidth: 10, mapHeight: 15 },
   { id: 'small-animal-sheds', name: 'Small Animal Sheds', category: 'facility', description: 'Guinea pig house and rabbit house.', mapX: 40, mapY: 85, mapWidth: 6, mapHeight: 15 },
-  { id: 'greenhouse-9600ft', name: '9600ft Tunnel', category: 'structure', description: 'Large greenhouse growing tunnel for potted seedlings.', mapX: 77, mapY: 32, mapWidth: 16, mapHeight: 14 },
+  { id: 'gh-alpha', name: 'Tunnel Alpha', category: 'structure', description: '3,200 sqft greenhouse tunnel - currently growing Muriya (crop assignment inferred from planting/removal dates, pending photo confirmation). See the Tunnels page for financials.', mapX: 77, mapY: 32, mapWidth: 5.34, mapHeight: 14 },
+  { id: 'gh-bravo', name: 'Tunnel Bravo', category: 'structure', description: '3,200 sqft greenhouse tunnel - currently growing Hot Dragon (crop assignment inferred from planting/removal dates, pending photo confirmation). See the Tunnels page for financials.', mapX: 82.34, mapY: 32, mapWidth: 5.33, mapHeight: 14 },
+  { id: 'gh-charlie', name: 'Tunnel Charlie', category: 'structure', description: '3,200 sqft greenhouse tunnel - currently growing Hot Dragon (crop assignment inferred from planting/removal dates, pending photo confirmation). See the Tunnels page for financials.', mapX: 87.67, mapY: 32, mapWidth: 5.33, mapHeight: 14 },
   { id: 'compost-area', name: 'Compost Area', category: 'structure', description: 'Organic composting yard.', mapX: 93, mapY: 38, mapWidth: 7, mapHeight: 8 },
 ]
