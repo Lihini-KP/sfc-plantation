@@ -4,15 +4,17 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { X, MapPin, Sparkles, Building2, Pencil, ArrowRight } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
-import { HealthBadge } from '@/components/ui/Badge'
+import { HealthBadge, SeverityBadge } from '@/components/ui/Badge'
 import { ScoreRing } from '@/components/ui/ProgressBar'
 import { areas as baseAreas } from '@/lib/mock-data/areas'
 import { facilities } from '@/lib/mock-data/facilities'
 import { crops } from '@/lib/mock-data/crops'
 import { cropSales } from '@/lib/mock-data/cropSales'
 import { getAnalysisForArea } from '@/lib/mock-data/aiInsights'
+import { greenhouses } from '@/lib/mock-data/greenhouses'
+import { getPhotoLogsForTunnel } from '@/lib/mock-data/tunnelPhotoLogs'
 import { formatDate, formatCurrency } from '@/lib/format'
-import type { HealthStatus, PlantationArea } from '@/lib/types'
+import type { HealthStatus, PlantationArea, TunnelPhotoEntry } from '@/lib/types'
 
 const STORAGE_KEY = 'sfc-area-overrides'
 
@@ -110,6 +112,20 @@ export function MapClient() {
   const selectedCrop = selectedArea ? crops.find((c) => c.id === selectedArea.cropId) : undefined
   const selectedAnalysis = selectedArea ? getAnalysisForArea(selectedArea.id) : undefined
   const cropKeyword = selectedCrop?.name.split(' ')[0].toLowerCase()
+
+  const isTunnelFacility = !!selectedFacility && TUNNEL_FACILITY_IDS.has(selectedFacility.id)
+  const selectedGreenhouse = isTunnelFacility ? greenhouses.find((g) => g.id === selectedFacility!.id) : undefined
+  const tunnelLogs: TunnelPhotoEntry[] = isTunnelFacility
+    ? (() => {
+        const seed = getPhotoLogsForTunnel(selectedFacility!.id)
+        let local: TunnelPhotoEntry[] = []
+        const saved = localStorage.getItem(`sfc-tunnel-photos-${selectedFacility!.id}`)
+        if (saved) {
+          try { local = JSON.parse(saved) } catch { /* ignore corrupt storage */ }
+        }
+        return [...local, ...seed].sort((a, b) => b.date.localeCompare(a.date))
+      })()
+    : []
 
   function startEdit() {
     if (!selectedArea) return
@@ -286,9 +302,54 @@ export function MapClient() {
               <button onClick={() => setSelection(null)} className="rounded-lg p-1.5 hover:bg-brand-50"><X size={16} /></button>
             </div>
             <p className="text-sm text-brand-700/70">{selectedFacility.description}</p>
+
+            {selectedGreenhouse && (
+              <>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                  <Field label="Current Crop" value={selectedGreenhouse.cropName} />
+                  <Field label="Size" value={`${selectedGreenhouse.sqft.toLocaleString()} sqft`} />
+                  <Field label="Revenue" value={formatCurrency(selectedGreenhouse.revenue)} />
+                  <Field label="Total Expenses" value={formatCurrency(selectedGreenhouse.totalExpenses)} />
+                </dl>
+                {(() => {
+                  const profit = selectedGreenhouse.revenue - selectedGreenhouse.totalExpenses
+                  return (
+                    <div className={`flex items-center justify-between rounded-xl p-2.5 text-sm font-semibold ${profit >= 0 ? 'bg-status-healthy/10 text-status-healthy' : 'bg-status-critical/10 text-status-critical'}`}>
+                      <span>{profit >= 0 ? 'Profit' : 'Loss'}</span>
+                      <span>{formatCurrency(Math.abs(profit))}</span>
+                    </div>
+                  )
+                })()}
+
+                <div>
+                  <p className="mb-1 text-xs font-semibold text-brand-700/70">Tunnel Updates ({tunnelLogs.length})</p>
+                  {tunnelLogs.length === 0 ? (
+                    <p className="text-xs text-brand-700/40">No photo updates logged yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {tunnelLogs.slice(0, 2).map((log) => (
+                        <div key={log.id} className="rounded-xl bg-brand-50 p-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-brand-800">{formatDate(log.date)}</span>
+                            {log.severity && <SeverityBadge severity={log.severity} />}
+                          </div>
+                          {log.healthAssessment && (
+                            <p className="mt-1 line-clamp-2 text-xs text-brand-700/70">{log.healthAssessment}</p>
+                          )}
+                        </div>
+                      ))}
+                      {tunnelLogs.length > 2 && (
+                        <p className="text-[10px] text-brand-700/40">+{tunnelLogs.length - 2} more on the Tunnel page.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             {TUNNEL_FACILITY_IDS.has(selectedFacility.id) && (
               <Link href={`/tunnels/${selectedFacility.id}`} className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">
-                View Tunnel details <ArrowRight size={14} />
+                View full Tunnel page <ArrowRight size={14} />
               </Link>
             )}
           </div>
