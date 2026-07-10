@@ -11,6 +11,7 @@ import { ESTATE_LOCATION } from '@/lib/estate-config'
 
 const activityTypes = ['Watering', 'Fertilizing', 'Weeding', 'Pest control', 'Disease inspection', 'Pruning', 'Harvesting']
 const staffOptions = ['R Thambiraja', 'W A A N Wijesooriya', 'N M G Dharmasena', 'W.G. Dissanayaka', 'Malar Kanthi', 'Richard']
+const STORAGE_KEY = 'sfc-daily-updates'
 
 function emptyForm(): Omit<DailyUpdate, 'id'> {
   return {
@@ -37,6 +38,14 @@ export function UpdatesClient() {
   const [filters, setFilters] = useState({ areaId: 'all', cropId: 'all', staff: 'all', activity: 'all', date: '' })
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [liveWeather, setLiveWeather] = useState<LiveWeather | null>(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- loading persisted state on mount, not derived from props/state
+      try { setUpdates([...JSON.parse(saved), ...initialUpdates]) } catch { /* ignore corrupt storage */ }
+    }
+  }, [])
 
   async function loadLiveWeather() {
     setWeatherStatus('loading')
@@ -70,7 +79,10 @@ export function UpdatesClient() {
 
   function submit() {
     const newUpdate: DailyUpdate = { id: `upd-${Date.now()}`, ...form }
-    setUpdates((prev) => [newUpdate, ...prev])
+    const updated = [newUpdate, ...updates]
+    setUpdates(updated)
+    const userEntered = updated.filter((u) => !initialUpdates.some((i) => i.id === u.id))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(userEntered))
     setForm(emptyForm())
     setShowForm(false)
   }
@@ -84,6 +96,13 @@ export function UpdatesClient() {
 
   return (
     <div className="space-y-6">
+      <Card className="border-brand-200 bg-brand-50">
+        <p className="text-xs text-brand-700/70">
+          Updates you log are saved in this browser only for now (no shared database connected yet) - they won&apos;t
+          show up on another device or for another person logged in elsewhere. Needs the Supabase connection wired in
+          for real cross-device sync.
+        </p>
+      </Card>
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardHeader title="Filters" subtitle="Filter the plantation update history" />
