@@ -11,7 +11,6 @@ import { ESTATE_LOCATION } from '@/lib/estate-config'
 
 const activityTypes = ['Watering', 'Fertilizing', 'Weeding', 'Pest control', 'Disease inspection', 'Pruning', 'Harvesting']
 const staffOptions = ['R Thambiraja', 'W A A N Wijesooriya', 'N M G Dharmasena', 'W.G. Dissanayaka', 'Malar Kanthi', 'Richard']
-const STORAGE_KEY = 'sfc-daily-updates'
 
 function emptyForm(): Omit<DailyUpdate, 'id'> {
   return {
@@ -33,6 +32,8 @@ function emptyForm(): Omit<DailyUpdate, 'id'> {
 
 export function UpdatesClient() {
   const [updates, setUpdates] = useState<DailyUpdate[]>(initialUpdates)
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>('loading')
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'saving' | 'error'>('idle')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm())
   const [filters, setFilters] = useState({ areaId: 'all', cropId: 'all', staff: 'all', activity: 'all', date: '' })
@@ -40,11 +41,17 @@ export function UpdatesClient() {
   const [liveWeather, setLiveWeather] = useState<LiveWeather | null>(null)
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- loading persisted state on mount, not derived from props/state
-      try { setUpdates([...JSON.parse(saved), ...initialUpdates]) } catch { /* ignore corrupt storage */ }
-    }
+    fetch('/api/daily-updates')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.updates) {
+          setUpdates(data.updates)
+          setLoadStatus('success')
+        } else {
+          setLoadStatus('error')
+        }
+      })
+      .catch(() => setLoadStatus('error'))
   }, [])
 
   async function loadLiveWeather() {
@@ -77,14 +84,23 @@ export function UpdatesClient() {
       .sort((a, b) => b.date.localeCompare(a.date))
   }, [updates, filters])
 
-  function submit() {
-    const newUpdate: DailyUpdate = { id: `upd-${Date.now()}`, ...form }
-    const updated = [newUpdate, ...updates]
-    setUpdates(updated)
-    const userEntered = updated.filter((u) => !initialUpdates.some((i) => i.id === u.id))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(userEntered))
-    setForm(emptyForm())
-    setShowForm(false)
+  async function submit() {
+    setSubmitStatus('saving')
+    try {
+      const res = await fetch('/api/daily-updates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.update) throw new Error(data.error || 'Save failed.')
+      setUpdates((prev) => [data.update, ...prev])
+      setForm(emptyForm())
+      setShowForm(false)
+      setSubmitStatus('idle')
+    } catch {
+      setSubmitStatus('error')
+    }
   }
 
   function toggleStaff(name: string) {
@@ -98,11 +114,14 @@ export function UpdatesClient() {
     <div className="space-y-6">
       <Card className="border-brand-200 bg-brand-50">
         <p className="text-xs text-brand-700/70">
-          Updates you log are saved in this browser only for now (no shared database connected yet) - they won&apos;t
-          show up on another device or for another person logged in elsewhere. Needs the Supabase connection wired in
-          for real cross-device sync.
+          Updates are saved to the shared database - visible to everyone logged in, on any device.
         </p>
       </Card>
+      {loadStatus === 'error' && (
+        <Card className="border-status-critical/30 bg-status-critical/5">
+          <p className="text-xs text-status-critical">Couldn&apos;t load updates from the database. Check your connection and reload the page.</p>
+        </Card>
+      )}
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardHeader title="Filters" subtitle="Filter the plantation update history" />
@@ -281,9 +300,14 @@ export function UpdatesClient() {
                 <textarea className="w-full rounded-xl border border-brand-100 px-3 py-2" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </label>
             </div>
+            {submitStatus === 'error' && (
+              <p className="mt-3 text-xs text-status-critical">Couldn&apos;t save this update - check your connection and try again.</p>
+            )}
             <div className="mt-5 flex justify-end gap-3">
               <button onClick={() => setShowForm(false)} className="rounded-xl border border-brand-100 px-4 py-2 text-sm font-medium text-brand-700">Cancel</button>
-              <button onClick={submit} className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Save Update</button>
+              <button onClick={submit} disabled={submitStatus === 'saving'} className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+                {submitStatus === 'saving' ? 'Saving...' : 'Save Update'}
+              </button>
             </div>
           </div>
         </div>
