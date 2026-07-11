@@ -14,6 +14,7 @@ import {
   Settings,
   Tent,
   FileSpreadsheet,
+  LineChart,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -37,4 +38,5 @@ export const navItems: NavItem[] = [
   { href: '/notifications', label: 'Notifications', icon: Bell },
   { href: '/ai-insights', label: 'AI Insights', icon: Sparkles },
   { href: '/settings', label: 'Roles & Settings', icon: Settings },
+  { href: '/harti-market', label: 'HARTI Market Intelligence', icon: LineChart },
 ]
