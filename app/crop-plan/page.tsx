@@ -2,8 +2,8 @@ import { ExternalLink, AlertTriangle } from 'lucide-react'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { Card, CardHeader } from '@/components/ui/Card'
 
-const SHEET_ID = '13_zh-_CWVxYdZZk2N_u_XnAeNvn1rO1woC9UsBqy6kI'
-const SHEET_GID = '1651127828'
+const SHEET_ID = '1XlN8U3YomSvsgnrFVaIMu3enkbm9ARip'
+const SHEET_GID = '296284123'
 const EDIT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?usp=sharing&gid=${SHEET_GID}`
 const EMBED_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?usp=sharing&rm=minimal&widget=true&headers=false&gid=${SHEET_GID}`
 
