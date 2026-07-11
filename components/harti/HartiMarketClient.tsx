@@ -118,14 +118,28 @@ export function HartiMarketClient() {
     setError('')
     try {
       const tunnelPhotoData = gatherTunnelPhotoData()
-      const res = await fetch('/api/harti-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tunnelPhotoData }),
+      const [marketRes, tunnelRes] = await Promise.all([
+        fetch('/api/harti-analysis/market', { method: 'POST' }),
+        fetch('/api/harti-analysis/tunnels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tunnelPhotoData }),
+        }),
+      ])
+      const marketData = await marketRes.json()
+      const tunnelData = await tunnelRes.json()
+      if (!marketRes.ok) throw new Error(marketData.error || 'Market analysis failed.')
+      if (!tunnelRes.ok) throw new Error(tunnelData.error || 'Tunnel analysis failed.')
+
+      setAnalysis({
+        hartiSummary: marketData.analysis.hartiSummary,
+        cropMarketTrends: marketData.analysis.cropMarketTrends,
+        plantationVsMarket: marketData.analysis.plantationVsMarket,
+        tunnelHealthScores: tunnelData.analysis.tunnelHealthScores,
+        tunnels: tunnelData.analysis.tunnels,
+        actionItems: [...marketData.analysis.actionItems, ...tunnelData.analysis.actionItems],
+        riskAlerts: [...marketData.analysis.riskAlerts, ...tunnelData.analysis.riskAlerts],
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Analysis failed.')
-      setAnalysis(data.analysis)
       setStatus('success')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analysis failed.')
