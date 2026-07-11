@@ -66,8 +66,8 @@ export interface Crop {
 export interface DailyUpdate {
   id: string
   date: string
-  areaId: string
-  cropId: string
+  areaId: string | null // null for updates not tied to a plantation area (e.g. tunnel photo reviews)
+  cropId: string | null
   activity: string
   staff: string[]
   weather: string

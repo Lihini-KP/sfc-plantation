@@ -5,6 +5,8 @@ import { Upload, Sparkles, AlertTriangle, Loader2 } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { SeverityBadge } from '@/components/ui/Badge'
 import { getPhotoLogsForTunnel } from '@/lib/mock-data/tunnelPhotoLogs'
+import { crops } from '@/lib/mock-data/crops'
+import { useRole } from '@/lib/role-context'
 import { formatDate } from '@/lib/format'
 import type { TunnelPhotoEntry, Severity } from '@/lib/types'
 
@@ -18,6 +20,7 @@ interface AnalysisResult {
 }
 
 export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnelId: string; tunnelName: string; cropName: string }) {
+  const { currentUser } = useRole()
   const seedLogs = getPhotoLogsForTunnel(tunnelId)
   const [localLogs, setLocalLogs] = useState<TunnelPhotoEntry[]>([])
   const [pendingPhotos, setPendingPhotos] = useState<string[]>([])
@@ -100,6 +103,7 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
   function saveWeek() {
     if (pendingPhotos.length === 0) return
     const entry: TunnelPhotoEntry = {
+      // eslint-disable-next-line react-hooks/purity -- click-handler side effect, not called during render
       id: `tpl-${tunnelId}-${Date.now()}`,
       tunnelId,
       date: new Date().toISOString().slice(0, 10),
@@ -113,10 +117,38 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
     const updated = [entry, ...localLogs]
     setLocalLogs(updated)
     localStorage.setItem(STORAGE_PREFIX + tunnelId, JSON.stringify(updated))
+    recordDailyUpdate(entry)
     setPendingPhotos([])
     setNotes('')
     setAnalysisResult(null)
     setAnalysisError('')
+  }
+
+  function recordDailyUpdate(entry: TunnelPhotoEntry) {
+    const matchedCrop = crops.find((c) => c.name.toLowerCase() === cropName.toLowerCase())
+    const notesParts = [`Tunnel ${tunnelName} weekly photo review.`]
+    if (entry.healthAssessment) notesParts.push(entry.healthAssessment)
+    if (entry.recommendedActions?.length) notesParts.push(`Recommended: ${entry.recommendedActions.join('; ')}`)
+
+    fetch('/api/daily-updates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date: entry.date,
+        areaId: null,
+        cropId: matchedCrop?.id || null,
+        activity: 'Tunnel Photo Review',
+        staff: currentUser ? [currentUser.name] : [],
+        weather: '',
+        wateringDetails: '',
+        fertilizerApplied: '',
+        pesticideApplied: '',
+        diseasesFound: entry.detectedIssues?.join(', ') || '',
+        pestIssues: '',
+        notes: notesParts.join(' '),
+        photoCount: entry.photos.length,
+      }),
+    }).catch(() => { /* best-effort - the tunnel photo log itself already saved */ })
   }
 
   const allLogs = [...localLogs, ...seedLogs].sort((a, b) => b.date.localeCompare(a.date))
@@ -128,7 +160,8 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
           Upload two photos once a week. Photos are stored in this browser only for now (no object storage connected
           yet - needs Supabase Storage for real persistence across devices). Photos are analyzed automatically by
           Claude&apos;s vision model as soon as you select them - a general-purpose AI reading of the images, not a
-          specialized trained plant-pathology model.
+          specialized trained plant-pathology model. Saving a week also logs a &quot;Tunnel Photo Review&quot; entry in
+          Daily Updates.
         </p>
       </Card>
 

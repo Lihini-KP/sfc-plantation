@@ -5,8 +5,8 @@ import type { DailyUpdate } from '@/lib/types'
 function toRow(u: Omit<DailyUpdate, 'id'>) {
   return {
     date: u.date,
-    area_id: u.areaId,
-    crop_id: u.cropId,
+    area_id: u.areaId || null,
+    crop_id: u.cropId || null,
     activity: u.activity,
     staff: u.staff,
     weather: u.weather,
@@ -21,7 +21,7 @@ function toRow(u: Omit<DailyUpdate, 'id'>) {
 }
 
 function fromRow(row: {
-  id: string; date: string; area_id: string; crop_id: string; activity: string; staff: string[]
+  id: string; date: string; area_id: string | null; crop_id: string | null; activity: string; staff: string[]
   weather: string; watering_details: string; fertilizer_applied: string; pesticide_applied: string
   diseases_found: string; pest_issues: string; notes: string; photo_count: number
 }): DailyUpdate {

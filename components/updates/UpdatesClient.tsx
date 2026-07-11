@@ -9,10 +9,12 @@ import { formatDate } from '@/lib/format'
 import { fetchLiveWeather, type LiveWeather } from '@/lib/weather-api'
 import { ESTATE_LOCATION } from '@/lib/estate-config'
 
-const activityTypes = ['Watering', 'Fertilizing', 'Weeding', 'Pest control', 'Disease inspection', 'Pruning', 'Harvesting']
+const activityTypes = ['Watering', 'Fertilizing', 'Weeding', 'Pest control', 'Disease inspection', 'Pruning', 'Harvesting', 'Tunnel Photo Review']
 const staffOptions = ['R Thambiraja', 'W A A N Wijesooriya', 'N M G Dharmasena', 'W.G. Dissanayaka', 'Malar Kanthi', 'Richard']
 
-function emptyForm(): Omit<DailyUpdate, 'id'> {
+type UpdateForm = Omit<DailyUpdate, 'id' | 'areaId' | 'cropId'> & { areaId: string; cropId: string }
+
+function emptyForm(): UpdateForm {
   return {
     date: new Date().toISOString().slice(0, 10),
     areaId: areas[0].id,
@@ -165,12 +167,15 @@ export function UpdatesClient() {
         {filtered.map((u) => {
           const area = areas.find((a) => a.id === u.areaId)
           const crop = crops.find((c) => c.id === u.cropId)
+          const label = [area?.name, crop?.name].filter(Boolean).join(' · ')
           return (
             <Card key={u.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-brand-800">{formatDate(u.date)} · {area?.name} · {crop?.name}</p>
-                  <p className="text-xs text-brand-700/50">{u.activity} · {u.staff.join(', ') || 'Unassigned'} · {u.weather}</p>
+                  <p className="text-sm font-semibold text-brand-800">{formatDate(u.date)}{label ? ` · ${label}` : ''}</p>
+                  <p className="text-xs text-brand-700/50">
+                    {[u.activity, u.staff.join(', ') || 'Unassigned', u.weather].filter(Boolean).join(' · ')}
+                  </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-brand-700/50">
                   <span className="flex items-center gap-1"><ImageIcon size={13} /> {u.photoCount}</span>
