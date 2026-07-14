@@ -1,9 +1,10 @@
 import {
-  TrendingUp, TrendingDown, Minus, AlertTriangle, Sparkles, ListChecks, ShieldAlert,
+  TrendingUp, TrendingDown, Minus, AlertTriangle, Sparkles, ListChecks, ShieldAlert, Tent, HeartPulse,
 } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { ScoreRing } from '@/components/ui/ProgressBar'
 import { SeverityBadge } from '@/components/ui/Badge'
+import { StatCard } from '@/components/ui/StatCard'
 import type { Severity } from '@/lib/types'
 import type { HartiAnalysis } from '@/lib/harti-types'
 
@@ -37,8 +38,44 @@ export function AnalysisView({
   const actionItems = analysis.actionItems ?? []
   const riskAlerts = analysis.riskAlerts ?? []
 
+  const passionTrend = cropMarketTrends.find((t) => t.cropName === 'Passion Fruit') ?? cropMarketTrends[0]
+  const scoredTunnels = tunnelHealthScores.filter((t) => t.dataAvailable)
+  const avgTunnelHealth = scoredTunnels.length
+    ? Math.round(scoredTunnels.reduce((sum, t) => sum + t.score, 0) / scoredTunnels.length)
+    : null
+  const criticalRiskCount = riskAlerts.filter((r) => r.severity.toLowerCase() === 'critical').length
+  const TrendIcon = passionTrend ? (passionTrend.trend === 'up' ? TrendingUp : passionTrend.trend === 'down' ? TrendingDown : Minus) : Minus
+
   return (
     <>
+      {/* Summary stat cards */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+        {passionTrend && (
+          <StatCard
+            label="Passion Fruit Trend"
+            value={`${passionTrend.changePct > 0 ? '+' : ''}${passionTrend.changePct}%`}
+            icon={TrendIcon}
+            hint="Week-on-week"
+            tone={passionTrend.trend === 'up' ? 'brand' : passionTrend.trend === 'down' ? 'critical' : 'earth'}
+          />
+        )}
+        <StatCard label="Tunnels Monitored" value={`${tunnelHealthScores.length}`} icon={Tent} tone="earth" />
+        <StatCard
+          label="Avg Tunnel Health"
+          value={avgTunnelHealth !== null ? `${avgTunnelHealth}%` : 'No data'}
+          icon={HeartPulse}
+          hint={`${scoredTunnels.length} of ${tunnelHealthScores.length} with photo data`}
+        />
+        <StatCard label="Open Action Items" value={`${actionItems.length}`} icon={ListChecks} tone="earth" />
+        <StatCard
+          label="Risk Alerts"
+          value={`${riskAlerts.length}`}
+          icon={AlertTriangle}
+          tone={criticalRiskCount > 0 ? 'critical' : riskAlerts.length > 0 ? 'warn' : 'brand'}
+          hint={criticalRiskCount > 0 ? `${criticalRiskCount} critical` : undefined}
+        />
+      </div>
+
       {/* HARTI Market Summary */}
       <Card>
         <CardHeader title="HARTI Market Summary" subtitle={marketSummarySubtitle} />
