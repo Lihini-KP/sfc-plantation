@@ -15,6 +15,7 @@ import {
   Tent,
   FileSpreadsheet,
   LineChart,
+  CalendarCheck,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -39,4 +40,5 @@ export const navItems: NavItem[] = [
   { href: '/ai-insights', label: 'AI Insights', icon: Sparkles },
   { href: '/settings', label: 'Roles & Settings', icon: Settings },
   { href: '/harti-market', label: 'HARTI Market Intelligence', icon: LineChart },
+  { href: '/weekly-reports', label: 'Weekly Reports', icon: CalendarCheck },
 ]
