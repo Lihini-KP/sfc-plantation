@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/format'
 import type { TunnelPhotoEntry } from '@/lib/types'
 import type { HartiAnalysis } from '@/lib/harti-types'
 import { AnalysisView } from './AnalysisView'
+import { PassionFruitPriceChart } from './PassionFruitPriceChart'
 
 const WEEKLY_SOURCE_URL = 'https://www.harti.gov.lk/weekly-price.php'
 
@@ -184,6 +185,8 @@ export function HartiMarketClient() {
           {status === 'loading' ? 'Analyzing...' : 'Refresh Analysis'}
         </button>
       </div>
+
+      <PassionFruitPriceChart />
 
       {status === 'loading' && !analysis && (
         <Card>
