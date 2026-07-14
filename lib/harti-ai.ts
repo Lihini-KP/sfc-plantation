@@ -31,14 +31,33 @@ export async function generateHartiJSON(systemPrompt: string, userMessage: strin
     return { error: 'AI analysis returned no readable response.', status: 502 }
   }
 
-  const jsonMatch = /\{[\s\S]*\}/.exec(textBlock.text)
-  if (!jsonMatch) {
-    return { error: 'AI analysis response was not valid JSON.', status: 502 }
+  // A cut-off response is the most common real cause of "invalid JSON" - the
+  // model runs out of max_tokens mid-object, so the greedy brace match below
+  // grabs a truncated, unparseable fragment. Surface this distinctly instead
+  // of the generic parse-failure message so it's obvious what actually
+  // happened (and that raising maxTokens, not retrying, is the fix).
+  if (message.stop_reason === 'max_tokens') {
+    return { error: 'AI analysis was cut off because it ran out of response length (max_tokens) - try again, or this route needs a higher token limit.', status: 502 }
   }
 
-  try {
-    return { data: JSON.parse(jsonMatch[0]) }
-  } catch {
-    return { error: 'AI analysis response could not be parsed.', status: 502 }
+  const raw = textBlock.text.trim()
+
+  // Try the whole response first (expected shape, given the "no markdown
+  // fences, no extra text" instruction), then fall back to stripping a
+  // markdown code fence if the model added one anyway, before resorting to
+  // greedy brace-matching as a last resort.
+  const candidates = [
+    raw,
+    raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim(),
+    /\{[\s\S]*\}/.exec(raw)?.[0],
+  ].filter((c): c is string => Boolean(c))
+
+  for (const candidate of candidates) {
+    try {
+      return { data: JSON.parse(candidate) }
+    } catch { /* try next candidate */ }
   }
+
+  console.error('HARTI AI response could not be parsed as JSON:', raw.slice(0, 2000))
+  return { error: 'AI analysis response could not be parsed.', status: 502 }
 }

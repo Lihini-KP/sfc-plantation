@@ -4,3 +4,8 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Regenerates the HARTI weekly Passion Fruit + Moringa analysis every Monday
+# at 03:00 UTC (08:30 Sri Lanka time). See netlify/functions/harti-weekly-cron.ts.
+[functions."harti-weekly-cron"]
+  schedule = "0 3 * * 1"

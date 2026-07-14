@@ -10,9 +10,10 @@ import { ScoreRing } from '@/components/ui/ProgressBar'
 import { SeverityBadge } from '@/components/ui/Badge'
 import { greenhouses } from '@/lib/mock-data/greenhouses'
 import { getPhotoLogsForTunnel } from '@/lib/mock-data/tunnelPhotoLogs'
-import { HARTI_BULLETIN_META, HARTI_UNTRACKED_CROPS } from '@/lib/mock-data/hartiMarketData'
 import { formatDate } from '@/lib/format'
 import type { Severity, TunnelPhotoEntry } from '@/lib/types'
+
+const WEEKLY_SOURCE_URL = 'https://www.harti.gov.lk/weekly-price.php'
 
 interface CropMarketTrend {
   cropName: string
@@ -71,6 +72,23 @@ interface Analysis {
   actionItems: ActionItem[]
   riskAlerts: RiskAlert[]
 }
+interface BulletinMeta {
+  weekStart: string
+  weekEnd: string
+  bulletinVolume: number | null
+  bulletinIssue: number | null
+  pdfUrl: string
+  sourceUrl: string
+  usedFallback: boolean
+  fallbackReason?: string
+  saveWarning?: string
+}
+interface WeeklyHistoryEntry {
+  weekStart: string
+  weekEnd: string
+  generatedAt: string
+  analysis: Pick<Analysis, 'hartiSummary' | 'cropMarketTrends' | 'plantationVsMarket'>
+}
 
 const STORAGE_PREFIX = 'sfc-tunnel-photos-'
 
@@ -110,8 +128,19 @@ function gatherTunnelPhotoData() {
 
 export function HartiMarketClient() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
+  const [bulletinMeta, setBulletinMeta] = useState<BulletinMeta | null>(null)
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [error, setError] = useState('')
+  const [history, setHistory] = useState<WeeklyHistoryEntry[]>([])
+  const [historyOpenWeek, setHistoryOpenWeek] = useState<string | null>(null)
+
+  async function loadHistory() {
+    try {
+      const res = await fetch('/api/harti-analysis/weekly-history')
+      const data = await res.json()
+      if (res.ok) setHistory(data.weeks || [])
+    } catch { /* history is a nice-to-have - ignore failures */ }
+  }
 
   async function runAnalysis() {
     setStatus('loading')
@@ -131,6 +160,7 @@ export function HartiMarketClient() {
       if (!marketRes.ok) throw new Error(marketData.error || 'Market analysis failed.')
       if (!tunnelRes.ok) throw new Error(tunnelData.error || 'Tunnel analysis failed.')
 
+      setBulletinMeta(marketData.bulletinMeta)
       setAnalysis({
         hartiSummary: marketData.analysis.hartiSummary,
         cropMarketTrends: marketData.analysis.cropMarketTrends,
@@ -141,6 +171,7 @@ export function HartiMarketClient() {
         riskAlerts: [...marketData.analysis.riskAlerts, ...tunnelData.analysis.riskAlerts],
       })
       setStatus('success')
+      loadHistory()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analysis failed.')
       setStatus('error')
@@ -150,23 +181,40 @@ export function HartiMarketClient() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- kicking off the initial analysis fetch on mount, not deriving state
     runAnalysis()
+    loadHistory()
   }, [])
 
   return (
     <div className="space-y-6">
       <Card className="border-brand-200 bg-brand-50">
         <p className="text-xs text-brand-700/70">
-          Compares our real plantation and tunnel data against HARTI&apos;s (Hector Kobbekaduwa Agrarian Research and
-          Training Institute) national Food Information Bulletin. {HARTI_BULLETIN_META.note} Crops with no HARTI market
-          reference ({HARTI_UNTRACKED_CROPS.join(', ')}) are shown without a market comparison rather than an invented one.
-          All health/risk analysis below is AI-generated from real data (tunnel photo logs, financials, HARTI figures) -
-          treat it as a decision aid, not a substitute for field inspection.
+          Scoped to our 5 greenhouse tunnels (Alpha, Bravo, Charlie, Oregano, Echo), the Passion Fruit plot, and the
+          Moringa plot against HARTI&apos;s (Hector Kobbekaduwa Agrarian Research and Training Institute) real WEEKLY
+          Food Commodities Bulletin - fetched live and regenerated automatically every Monday, with history saved week
+          by week. HARTI publishes no market price data for Moringa, so it is shown with our real plantation data
+          only, not an invented trend. All health/risk analysis below is AI-generated from real data (tunnel photo
+          logs, financials, HARTI figures) - treat it as a decision aid, not a substitute for field inspection.
         </p>
       </Card>
 
+      {bulletinMeta?.usedFallback && (
+        <Card className="border-amber-300 bg-amber-50">
+          <p className="text-xs text-amber-800">
+            Could not fetch this week&apos;s live HARTI bulletin ({bulletinMeta.fallbackReason || 'unknown error'}) -
+            showing the last successfully saved week ({formatDate(bulletinMeta.weekStart)} - {formatDate(bulletinMeta.weekEnd)}) instead of inventing numbers.
+          </p>
+        </Card>
+      )}
+
+      {bulletinMeta?.saveWarning && (
+        <Card className="border-amber-300 bg-amber-50">
+          <p className="text-xs text-amber-800">{bulletinMeta.saveWarning} - the analysis above is accurate but won&apos;t appear in Weekly History until this is fixed.</p>
+        </Card>
+      )}
+
       <div className="flex items-center justify-between">
         <a
-          href={HARTI_BULLETIN_META.sourceUrl}
+          href={bulletinMeta?.sourceUrl || WEEKLY_SOURCE_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline"
@@ -203,7 +251,11 @@ export function HartiMarketClient() {
           <Card>
             <CardHeader
               title="HARTI Market Summary"
-              subtitle={`${HARTI_BULLETIN_META.title} - ${HARTI_BULLETIN_META.month} ${HARTI_BULLETIN_META.year} (Vol. ${HARTI_BULLETIN_META.volume}, No. ${HARTI_BULLETIN_META.issueNumber})`}
+              subtitle={
+                bulletinMeta
+                  ? `Weekly Food Commodities Bulletin - Week of ${formatDate(bulletinMeta.weekStart)} to ${formatDate(bulletinMeta.weekEnd)}${bulletinMeta.bulletinVolume ? ` (Vol. ${bulletinMeta.bulletinVolume}${bulletinMeta.bulletinIssue ? `, No. ${bulletinMeta.bulletinIssue}` : ''})` : ''}`
+                  : 'Weekly Food Commodities Bulletin'
+              }
             />
             <p className="text-sm text-brand-700/80">{analysis.hartiSummary}</p>
           </Card>
@@ -342,6 +394,46 @@ export function HartiMarketClient() {
             Analyzed {formatDate(new Date().toISOString().slice(0, 10))} · <ShieldAlert size={10} className="inline" /> AI-generated - verify critical actions in the field before acting.
           </p>
         </>
+      )}
+
+      {/* Weekly History */}
+      {history.length > 0 && (
+        <Card>
+          <CardHeader title="Weekly History" subtitle="Saved Passion Fruit & Moringa analyses, one per HARTI bulletin week" />
+          <div className="space-y-2">
+            {history.map((h) => {
+              const key = `${h.weekStart}_${h.weekEnd}`
+              const open = historyOpenWeek === key
+              return (
+                <div key={key} className="rounded-xl border border-brand-100">
+                  <button
+                    onClick={() => setHistoryOpenWeek(open ? null : key)}
+                    className="flex w-full items-center justify-between gap-3 p-3 text-left text-sm"
+                  >
+                    <span className="font-medium text-brand-800">
+                      Week of {formatDate(h.weekStart)} - {formatDate(h.weekEnd)}
+                    </span>
+                    <span className="text-xs text-brand-700/50">{open ? 'Hide' : 'View'}</span>
+                  </button>
+                  {open && (
+                    <div className="space-y-3 border-t border-brand-100 p-3">
+                      <p className="text-xs text-brand-700/80">{h.analysis.hartiSummary}</p>
+                      <div className="space-y-1.5">
+                        {h.analysis.plantationVsMarket.map((p) => (
+                          <div key={p.cropName} className="rounded-lg bg-brand-50 p-2 text-xs">
+                            <p className="font-semibold text-brand-800">{p.cropName}</p>
+                            <p className="text-brand-700/70">{p.ourStatus}</p>
+                            <p className="text-brand-700/70">{p.marketStatus}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </Card>
       )}
     </div>
   )
