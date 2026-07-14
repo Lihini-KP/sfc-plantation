@@ -3,6 +3,14 @@ import type { ReactNode } from 'react'
 
 // Wraps a detail section so it can be toggled open/closed from its matching
 // dashboard summary card above, and scrolled into view smoothly on open.
+//
+// Content is only rendered into the DOM when open, rather than always-mounted
+// and visually clipped via a CSS height/opacity transition - two different
+// CSS-transition-based collapse techniques (grid-template-rows 0fr/1fr, then
+// a large max-height cap) both produced inconsistent results in testing that
+// didn't repay further debugging. This trades the expand/collapse animation
+// for guaranteed correctness; the chevron rotation and hover lift still give
+// the interaction some polish.
 export function CollapsibleSection({
   id,
   title,
@@ -26,11 +34,7 @@ export function CollapsibleSection({
         <span className="text-sm font-semibold text-brand-800">{title}</span>
         <ChevronDown size={16} className={`text-brand-700/50 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
-      <div
-        className={`grid transition-all duration-300 ease-in-out ${open ? 'mt-4 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-      >
-        <div className="space-y-6 overflow-hidden">{children}</div>
-      </div>
+      {open && <div className="mt-4 space-y-6">{children}</div>}
     </div>
   )
 }

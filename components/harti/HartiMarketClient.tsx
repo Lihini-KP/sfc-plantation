@@ -88,17 +88,21 @@ export function HartiMarketClient() {
   const [openSections, setOpenSections] = useState<Set<SectionKey>>(new Set())
 
   function toggleSection(key: SectionKey) {
-    // Computed from the current closure value (not a setState updater
-    // function) so that if this handler ever fires more than once for a
-    // single click, both calls compute the same target set and idempotently
-    // set the same result - a functional prev=>next toggle would instead
-    // flip twice and net out to a no-op.
-    const isOpen = openSections.has(key)
-    const next = new Set(openSections)
-    if (isOpen) next.delete(key)
-    else next.add(key)
-    setOpenSections(next)
-    if (!isOpen) {
+    // Uses the functional updater form so each toggle is computed from the
+    // latest state rather than a closure snapshot - with a plain "new
+    // Set(openSections)" snapshot, several toggles landing in the same React
+    // batch (e.g. opening multiple sections in quick succession) would each
+    // start from the same stale set and overwrite each other, leaving only
+    // the last toggle applied.
+    let willOpen = false
+    setOpenSections((prev) => {
+      const next = new Set(prev)
+      willOpen = !prev.has(key)
+      if (willOpen) next.add(key)
+      else next.delete(key)
+      return next
+    })
+    if (willOpen) {
       requestAnimationFrame(() => {
         document.getElementById(SECTION_IDS[key])?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       })
