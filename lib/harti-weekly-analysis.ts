@@ -223,6 +223,7 @@ Rules:
     usedFallback,
     fallbackReason,
     saveWarning,
+    wholesaleAvgThisWeekRs: avgThisWeekRs,
     analysis,
   }
 }

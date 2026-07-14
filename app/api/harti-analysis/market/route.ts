@@ -26,6 +26,7 @@ export async function POST() {
         usedFallback: result.usedFallback,
         fallbackReason: result.fallbackReason,
         saveWarning: result.saveWarning,
+        wholesaleAvgThisWeekRs: result.wholesaleAvgThisWeekRs,
       },
     })
   } catch (err) {
