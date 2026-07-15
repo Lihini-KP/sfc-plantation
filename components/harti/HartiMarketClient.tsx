@@ -14,9 +14,16 @@ import type { TunnelPhotoEntry } from '@/lib/types'
 import type { HartiAnalysis } from '@/lib/harti-types'
 import { DashboardSummaryCard } from './DashboardSummaryCard'
 import { WeeklyReportsSection, type WeeklyReportEntry } from './WeeklyReportsSection'
+import {
+  MarketTrendSection, PlantationComparisonSection, TunnelHealthSection,
+  RecommendationsSection, ActionItemsSection, RiskAlertsSection,
+} from './AnalysisView'
 
 const WEEKLY_SOURCE_URL = 'https://www.harti.gov.lk/weekly-price.php'
 const STORAGE_PREFIX = 'sfc-tunnel-photos-'
+const WEEKLY_REPORTS_PANEL_ID = 'weekly-reports-panel'
+
+type TabKey = 'cropTrend' | 'plantationComparison' | 'tunnelHealth' | 'recommendations' | 'actionItems' | 'riskAlerts'
 
 function gatherTunnelPhotoData() {
   return greenhouses.map((g) => {
@@ -58,6 +65,7 @@ export function HartiMarketClient() {
   const [history, setHistory] = useState<WeeklyReportEntry[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
   const [priceThisWeekRs, setPriceThisWeekRs] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState<TabKey>('cropTrend')
 
   const [runStatus, setRunStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [runError, setRunError] = useState('')
@@ -252,80 +260,112 @@ export function HartiMarketClient() {
       )}
 
       {!historyLoading && currentWeekReport && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <DashboardSummaryCard
-            icon={TrendIcon}
-            title="Crop Wise Market Trend"
-            tone={primaryTrend?.trend === 'down' ? 'critical' : 'brand'}
-            stats={[
-              { label: 'Crops Tracked', value: dash(`${cropMarketTrends.length}`) },
-              { label: "This Week's Movement", value: primaryTrend ? `${primaryTrend.changePct > 0 ? '+' : ''}${primaryTrend.changePct}%` : '—' },
-              { label: 'Overall Trend', value: trendText },
-            ]}
-          />
-          <DashboardSummaryCard
-            icon={FileText}
-            title="Weekly Reports"
-            tone="earth"
-            stats={[
-              { label: 'Latest Report', value: latestReportWeekNumber ? `Week ${String(latestReportWeekNumber).padStart(2, '0')}` : 'None yet' },
-              { label: 'Generated', value: latestReport ? formatDate(latestReport.generatedAt.slice(0, 10)) : '—' },
-            ]}
-          />
-          <DashboardSummaryCard
-            icon={Scale}
-            title="Plantation vs Market"
-            stats={[
-              { label: 'Market Price', value: priceThisWeekRs != null ? `Rs ${Math.round(priceThisWeekRs)}/kg` : '—' },
-              { label: 'Crops Compared', value: dash(`${plantationVsMarket.length}`) },
-              { label: 'Misaligned', value: dash(`${misalignedCount}`) },
-            ]}
-          />
-          <DashboardSummaryCard
-            icon={HeartPulse}
-            title="Tunnel Health Score"
-            tone={criticalTunnels > 0 ? 'critical' : warningTunnels > 0 ? 'warn' : 'brand'}
-            stats={[
-              { label: 'Average Score', value: avgTunnelHealth !== null ? `${avgTunnelHealth}%` : 'No data' },
-              { label: 'Healthy', value: dash(`${healthyTunnels}`) },
-              { label: 'Warning', value: dash(`${warningTunnels}`) },
-              { label: 'Critical', value: dash(`${criticalTunnels}`) },
-            ]}
-          />
-          <DashboardSummaryCard
-            icon={Lightbulb}
-            title="AI Recommendations"
-            tone="earth"
-            stats={[
-              { label: 'Total', value: dash(`${allIssues.length}`) },
-              { label: 'High Priority', value: dash(`${highPriorityCount}`) },
-              { label: 'Medium Priority', value: dash(`${mediumPriorityCount}`) },
-              { label: 'Low Priority', value: dash(`${lowPriorityCount}`) },
-            ]}
-          />
-          <DashboardSummaryCard
-            icon={ListChecks}
-            title="Action Items"
-            stats={[
-              { label: 'Pending', value: dash(`${actionItems.length}`) },
-              { label: 'In Progress', value: dash('0') },
-              { label: 'Completed', value: dash('0') },
-            ]}
-          />
-          <DashboardSummaryCard
-            icon={AlertTriangle}
-            title="Risk Alerts"
-            tone={criticalAlertCount > 0 ? 'critical' : riskAlerts.length > 0 ? 'warn' : 'brand'}
-            stats={[
-              { label: 'Active', value: dash(`${riskAlerts.length}`) },
-              { label: 'Critical', value: dash(`${criticalAlertCount}`) },
-              { label: 'Medium', value: dash(`${mediumAlertCount}`) },
-            ]}
-          />
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <DashboardSummaryCard
+              icon={TrendIcon}
+              title="Crop Wise Market Trend"
+              active={activeTab === 'cropTrend'}
+              onClick={() => setActiveTab('cropTrend')}
+              tone={primaryTrend?.trend === 'down' ? 'critical' : 'brand'}
+              stats={[
+                { label: 'Crops Tracked', value: dash(`${cropMarketTrends.length}`) },
+                { label: "This Week's Movement", value: primaryTrend ? `${primaryTrend.changePct > 0 ? '+' : ''}${primaryTrend.changePct}%` : '—' },
+                { label: 'Overall Trend', value: trendText },
+              ]}
+            />
+            <DashboardSummaryCard
+              icon={FileText}
+              title="Weekly Reports"
+              tone="earth"
+              onClick={() => document.getElementById(WEEKLY_REPORTS_PANEL_ID)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              stats={[
+                { label: 'Latest Report', value: latestReportWeekNumber ? `Week ${String(latestReportWeekNumber).padStart(2, '0')}` : 'None yet' },
+                { label: 'Generated', value: latestReport ? formatDate(latestReport.generatedAt.slice(0, 10)) : '—' },
+              ]}
+            />
+            <DashboardSummaryCard
+              icon={Scale}
+              title="Plantation vs Market"
+              active={activeTab === 'plantationComparison'}
+              onClick={() => setActiveTab('plantationComparison')}
+              stats={[
+                { label: 'Market Price', value: priceThisWeekRs != null ? `Rs ${Math.round(priceThisWeekRs)}/kg` : '—' },
+                { label: 'Crops Compared', value: dash(`${plantationVsMarket.length}`) },
+                { label: 'Misaligned', value: dash(`${misalignedCount}`) },
+              ]}
+            />
+            <DashboardSummaryCard
+              icon={HeartPulse}
+              title="Tunnel Health Score"
+              active={activeTab === 'tunnelHealth'}
+              onClick={() => setActiveTab('tunnelHealth')}
+              tone={criticalTunnels > 0 ? 'critical' : warningTunnels > 0 ? 'warn' : 'brand'}
+              stats={[
+                { label: 'Average Score', value: avgTunnelHealth !== null ? `${avgTunnelHealth}%` : 'No data' },
+                { label: 'Healthy', value: dash(`${healthyTunnels}`) },
+                { label: 'Warning', value: dash(`${warningTunnels}`) },
+                { label: 'Critical', value: dash(`${criticalTunnels}`) },
+              ]}
+            />
+            <DashboardSummaryCard
+              icon={Lightbulb}
+              title="AI Recommendations"
+              active={activeTab === 'recommendations'}
+              onClick={() => setActiveTab('recommendations')}
+              tone="earth"
+              stats={[
+                { label: 'Total', value: dash(`${allIssues.length}`) },
+                { label: 'High Priority', value: dash(`${highPriorityCount}`) },
+                { label: 'Medium Priority', value: dash(`${mediumPriorityCount}`) },
+                { label: 'Low Priority', value: dash(`${lowPriorityCount}`) },
+              ]}
+            />
+            <DashboardSummaryCard
+              icon={ListChecks}
+              title="Action Items"
+              active={activeTab === 'actionItems'}
+              onClick={() => setActiveTab('actionItems')}
+              stats={[
+                { label: 'Pending', value: dash(`${actionItems.length}`) },
+                { label: 'In Progress', value: dash('0') },
+                { label: 'Completed', value: dash('0') },
+              ]}
+            />
+            <DashboardSummaryCard
+              icon={AlertTriangle}
+              title="Risk Alerts"
+              active={activeTab === 'riskAlerts'}
+              onClick={() => setActiveTab('riskAlerts')}
+              tone={criticalAlertCount > 0 ? 'critical' : riskAlerts.length > 0 ? 'warn' : 'brand'}
+              stats={[
+                { label: 'Active', value: dash(`${riskAlerts.length}`) },
+                { label: 'Critical', value: dash(`${criticalAlertCount}`) },
+                { label: 'Medium', value: dash(`${mediumAlertCount}`) },
+              ]}
+            />
+          </div>
+
+          {/* Single detail panel - shows whichever card/tab is active */}
+          <div className="space-y-6">
+            {activeTab === 'cropTrend' && analysis && (
+              <MarketTrendSection
+                analysis={analysis}
+                marketSummarySubtitle={`Weekly Food Commodities Bulletin - Week of ${formatDate(currentWeekReport.weekStart)} to ${formatDate(currentWeekReport.weekEnd)}`}
+              />
+            )}
+            {activeTab === 'plantationComparison' && analysis && <PlantationComparisonSection analysis={analysis} />}
+            {activeTab === 'tunnelHealth' && analysis && <TunnelHealthSection analysis={analysis} />}
+            {activeTab === 'recommendations' && analysis && <RecommendationsSection analysis={analysis} />}
+            {activeTab === 'actionItems' && analysis && <ActionItemsSection analysis={analysis} />}
+            {activeTab === 'riskAlerts' && analysis && <RiskAlertsSection analysis={analysis} />}
+          </div>
+        </>
       )}
 
-      <WeeklyReportsSection history={history} loading={historyLoading} />
+      <div id={WEEKLY_REPORTS_PANEL_ID} className="scroll-mt-20">
+        <WeeklyReportsSection history={history} loading={historyLoading} />
+      </div>
     </div>
   )
 }
