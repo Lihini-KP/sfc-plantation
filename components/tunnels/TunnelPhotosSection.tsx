@@ -29,6 +29,8 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState('')
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
+  const [retryingId, setRetryingId] = useState<string | null>(null)
+  const [retryError, setRetryError] = useState<{ id: string; message: string } | null>(null)
 
   async function loadServerLogs() {
     try {
@@ -191,6 +193,43 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
     }).catch(() => { /* best-effort - the tunnel photo log itself already saved */ })
   }
 
+  // Re-runs AI vision analysis for an entry whose photo was saved but never
+  // got an assessment attached (e.g. the analysis call failed or was skipped
+  // at upload time) - the photo itself is already stored, so this reuses it
+  // rather than asking anyone to re-upload.
+  async function retroAnalyze(log: TunnelPhotoEntry) {
+    setRetryingId(log.id)
+    setRetryError(null)
+    try {
+      const res = await fetch('/api/analyze-tunnel-photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tunnelName, cropName, photos: log.photos }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Analysis failed.')
+
+      const patchRes = await fetch(`/api/tunnel-photos/${log.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          healthAssessment: data.healthAssessment,
+          detectedIssues: data.detectedIssues,
+          recommendedActions: data.recommendedActions,
+          severity: data.severity,
+          analyzedBy: 'Claude vision - automated analysis (retro-analyzed)',
+        }),
+      })
+      if (!patchRes.ok) throw new Error('Analysis succeeded but could not be saved.')
+
+      await loadServerLogs()
+    } catch (err) {
+      setRetryError({ id: log.id, message: err instanceof Error ? err.message : 'Analysis failed.' })
+    } finally {
+      setRetryingId(null)
+    }
+  }
+
   const allLogs = [...serverLogs, ...seedLogs].sort((a, b) => b.date.localeCompare(a.date))
 
   return (
@@ -273,7 +312,10 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
         <p className="py-6 text-center text-sm text-brand-700/40">No photos uploaded yet.</p>
       ) : (
         <div className="space-y-3">
-          {allLogs.map((log) => (
+          {allLogs.map((log) => {
+            const isServerLog = serverLogs.some((s) => s.id === log.id)
+            const canRetryAnalyze = isServerLog && log.photos.length > 0 && !log.healthAssessment
+            return (
             <Card key={log.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -288,6 +330,24 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
                     // eslint-disable-next-line @next/next/no-img-element
                     <img key={i} src={p} alt={`${log.date} photo ${i + 1}`} className="h-20 w-20 rounded-lg object-cover" />
                   ))}
+                </div>
+              )}
+              {canRetryAnalyze && (
+                <div className="mt-3 rounded-xl bg-amber-50 p-3">
+                  <p className="text-xs text-amber-800">
+                    This photo was saved without an AI assessment (the analysis likely failed at upload time).
+                  </p>
+                  <button
+                    onClick={() => retroAnalyze(log)}
+                    disabled={retryingId === log.id}
+                    className="mt-2 flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                  >
+                    {retryingId === log.id ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                    {retryingId === log.id ? 'Analyzing...' : 'Analyze Now'}
+                  </button>
+                  {retryError?.id === log.id && (
+                    <p className="mt-2 text-xs text-status-critical">{retryError.message}</p>
+                  )}
                 </div>
               )}
               {log.healthAssessment && (
@@ -313,7 +373,8 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
                 </div>
               )}
             </Card>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
