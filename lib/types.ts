@@ -78,6 +78,7 @@ export interface DailyUpdate {
   pestIssues: string
   notes: string
   photoCount: number
+  photos?: string[] // data URLs - stored directly in the shared database, same pattern as TunnelPhotoEntry
 }
 
 export interface PlantationTask {

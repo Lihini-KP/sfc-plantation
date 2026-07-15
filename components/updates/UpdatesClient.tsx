@@ -12,7 +12,7 @@ import { ESTATE_LOCATION } from '@/lib/estate-config'
 const activityTypes = ['Watering', 'Fertilizing', 'Weeding', 'Pest control', 'Disease inspection', 'Pruning', 'Harvesting', 'Tunnel Photo Review']
 const staffOptions = ['R Thambiraja', 'W A A N Wijesooriya', 'N M G Dharmasena', 'W.G. Dissanayaka', 'Malar Kanthi', 'Richard']
 
-type UpdateForm = Omit<DailyUpdate, 'id' | 'areaId' | 'cropId'> & { areaId: string; cropId: string }
+type UpdateForm = Omit<DailyUpdate, 'id' | 'areaId' | 'cropId' | 'photos'> & { areaId: string; cropId: string; photos: string[] }
 
 function emptyForm(): UpdateForm {
   return {
@@ -29,7 +29,34 @@ function emptyForm(): UpdateForm {
     pestIssues: '',
     notes: '',
     photoCount: 0,
+    photos: [],
   }
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.readAsDataURL(file)
+  })
+}
+
+function compressImage(dataUrl: string, maxDimension = 1280, quality = 0.75): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, maxDimension / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { resolve(dataUrl); return }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = reject
+    img.src = dataUrl
+  })
 }
 
 export function UpdatesClient() {
@@ -41,6 +68,19 @@ export function UpdatesClient() {
   const [filters, setFilters] = useState({ areaId: 'all', cropId: 'all', staff: 'all', activity: 'all', date: '' })
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [liveWeather, setLiveWeather] = useState<LiveWeather | null>(null)
+  const [photosProcessing, setPhotosProcessing] = useState(false)
+
+  function handlePhotoFiles(files: FileList | null) {
+    if (!files) return
+    setPhotosProcessing(true)
+    Promise.all(
+      Array.from(files)
+        .slice(0, 4)
+        .map((file) => readFileAsDataUrl(file).then((dataUrl) => compressImage(dataUrl)))
+    )
+      .then((photos) => setForm((f) => ({ ...f, photos, photoCount: photos.length })))
+      .finally(() => setPhotosProcessing(false))
+  }
 
   useEffect(() => {
     fetch('/api/daily-updates')
@@ -190,6 +230,14 @@ export function UpdatesClient() {
                 <p><span className="text-brand-700/50">Pests: </span>{u.pestIssues || 'None'}</p>
               </div>
               {u.notes && <p className="mt-2 rounded-lg bg-brand-50 p-2 text-sm text-brand-700/80">{u.notes}</p>}
+              {u.photos && u.photos.length > 0 && (
+                <div className="mt-3 flex gap-2">
+                  {u.photos.map((p, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={i} src={p} alt={`${formatDate(u.date)} photo ${i + 1}`} className="h-16 w-16 rounded-lg object-cover" />
+                  ))}
+                </div>
+              )}
             </Card>
           )
         })}
@@ -197,11 +245,29 @@ export function UpdatesClient() {
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-brand-800">Log New Plantation Update</h3>
-              <button onClick={() => setShowForm(false)} className="rounded-lg p-1.5 hover:bg-brand-50"><X size={18} /></button>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+            <div className="relative h-24 shrink-0 overflow-hidden rounded-t-2xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/estate-photo.jpg"
+                alt="Aerial view of the Silk Food Ceylon estate"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div
+                className="absolute inset-0"
+                style={{ background: 'linear-gradient(120deg, rgba(12,27,21,0.88) 0%, rgba(21,128,61,0.55) 55%, rgba(12,27,21,0.35) 100%)' }}
+              />
+              <div className="relative z-10 flex h-full items-center justify-between px-6">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">Silk Food Ceylon</p>
+                  <h3 className="text-lg font-semibold text-white">Log New Plantation Update</h3>
+                </div>
+                <button onClick={() => setShowForm(false)} className="rounded-lg bg-white/10 p-1.5 text-white hover:bg-white/20">
+                  <X size={18} />
+                </button>
+              </div>
             </div>
+            <div className="p-6">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="text-sm">
                 <span className="mb-1 block text-brand-700/60">Date</span>
@@ -296,9 +362,31 @@ export function UpdatesClient() {
                 <input className="w-full rounded-xl border border-brand-100 px-3 py-2" value={form.pestIssues} onChange={(e) => setForm({ ...form, pestIssues: e.target.value })} />
               </label>
               <label className="text-sm sm:col-span-2">
-                <span className="mb-1 block text-brand-700/60">Photos / Videos</span>
-                <input type="file" multiple disabled className="w-full rounded-xl border border-dashed border-brand-200 bg-brand-50/50 px-3 py-2 text-xs text-brand-700/50" />
-                <span className="mt-1 block text-[11px] text-brand-700/40">Media upload connects to Supabase Storage once the platform goes live.</span>
+                <span className="mb-1 block text-brand-700/60">Photos</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handlePhotoFiles(e.target.files)}
+                  className="w-full rounded-xl border border-dashed border-brand-200 bg-brand-50/50 px-3 py-2 text-xs text-brand-700/70"
+                />
+                {photosProcessing && (
+                  <span className="mt-1 flex items-center gap-1.5 text-[11px] text-brand-700/50">
+                    <RefreshCw size={11} className="animate-spin" /> Processing photos...
+                  </span>
+                )}
+                {form.photos.length > 0 && !photosProcessing && (
+                  <div className="mt-2 flex gap-2">
+                    {form.photos.map((p, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={p} alt={`Preview ${i + 1}`} className="h-16 w-16 rounded-lg object-cover" />
+                    ))}
+                  </div>
+                )}
+                <span className="mt-1 block text-[11px] text-brand-700/40">
+                  Up to 4 photos - saved to the shared database, visible to everyone. Video upload isn&apos;t supported
+                  yet (video files are too large for this storage approach).
+                </span>
               </label>
               <label className="text-sm sm:col-span-2">
                 <span className="mb-1 block text-brand-700/60">Notes</span>
@@ -313,6 +401,7 @@ export function UpdatesClient() {
               <button onClick={submit} disabled={submitStatus === 'saving'} className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
                 {submitStatus === 'saving' ? 'Saving...' : 'Save Update'}
               </button>
+            </div>
             </div>
           </div>
         </div>

@@ -17,13 +17,14 @@ function toRow(u: Omit<DailyUpdate, 'id'>) {
     pest_issues: u.pestIssues,
     notes: u.notes,
     photo_count: u.photoCount,
+    photos: u.photos || [],
   }
 }
 
 function fromRow(row: {
   id: string; date: string; area_id: string | null; crop_id: string | null; activity: string; staff: string[]
   weather: string; watering_details: string; fertilizer_applied: string; pesticide_applied: string
-  diseases_found: string; pest_issues: string; notes: string; photo_count: number
+  diseases_found: string; pest_issues: string; notes: string; photo_count: number; photos: string[]
 }): DailyUpdate {
   return {
     id: row.id,
@@ -40,6 +41,7 @@ function fromRow(row: {
     pestIssues: row.pest_issues,
     notes: row.notes,
     photoCount: row.photo_count,
+    photos: row.photos || [],
   }
 }
 
