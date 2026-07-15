@@ -22,19 +22,55 @@ interface AnalysisResult {
 export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnelId: string; tunnelName: string; cropName: string }) {
   const { currentUser } = useRole()
   const seedLogs = getPhotoLogsForTunnel(tunnelId)
-  const [localLogs, setLocalLogs] = useState<TunnelPhotoEntry[]>([])
+  const [serverLogs, setServerLogs] = useState<TunnelPhotoEntry[]>([])
+  const [logsLoading, setLogsLoading] = useState(true)
   const [pendingPhotos, setPendingPhotos] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState('')
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_PREFIX + tunnelId)
-    if (saved) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- loading persisted state on mount, not derived from props/state
-      try { setLocalLogs(JSON.parse(saved)) } catch { /* ignore corrupt storage */ }
+  async function loadServerLogs() {
+    try {
+      const res = await fetch(`/api/tunnel-photos?tunnelId=${encodeURIComponent(tunnelId)}`)
+      const data = await res.json()
+      if (res.ok) setServerLogs(data.logs || [])
+    } catch { /* ignore - shows empty state below */ } finally {
+      setLogsLoading(false)
     }
+  }
+
+  useEffect(() => {
+    // One-time migration: this browser may still hold entries saved before
+    // tunnel photos were wired to a shared backend (localStorage-only, so
+    // only visible on the device that uploaded them). Push any found here up
+    // to the shared table, then clear them so they aren't resubmitted next
+    // visit and everyone (not just this device) can see them from then on.
+    async function migrateLegacyLocalEntries() {
+      const key = STORAGE_PREFIX + tunnelId
+      const saved = localStorage.getItem(key)
+      if (!saved) return
+      // Claim the key synchronously (before any await) so a second effect
+      // invocation - e.g. React Strict Mode's dev-only double-mount - can't
+      // read the same entries again and double-submit them.
+      localStorage.removeItem(key)
+      let legacy: TunnelPhotoEntry[] = []
+      try { legacy = JSON.parse(saved) } catch { /* corrupt - drop it */ }
+      if (legacy.length > 0) {
+        await Promise.all(
+          legacy.map((entry) =>
+            fetch('/api/tunnel-photos', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(entry),
+            }).catch(() => { /* best-effort - this entry just won't migrate */ })
+          )
+        )
+      }
+    }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- kicking off migration + initial fetch on mount, not deriving state
+    migrateLegacyLocalEntries().then(loadServerLogs)
   }, [tunnelId])
 
   function readFileAsDataUrl(file: File): Promise<string> {
@@ -100,12 +136,9 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
     }
   }
 
-  function saveWeek() {
+  async function saveWeek() {
     if (pendingPhotos.length === 0) return
-    const entry: TunnelPhotoEntry = {
-      // eslint-disable-next-line react-hooks/purity -- click-handler side effect, not called during render
-      id: `tpl-${tunnelId}-${Date.now()}`,
-      tunnelId,
+    const entry = {
       date: new Date().toISOString().slice(0, 10),
       photos: pendingPhotos,
       healthAssessment: analysisResult?.healthAssessment || notes || undefined,
@@ -114,10 +147,17 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
       severity: analysisResult?.severity,
       analyzedBy: analysisResult ? 'Claude vision - automated analysis' : notes ? 'Manual note - not yet AI-analyzed' : undefined,
     }
-    const updated = [entry, ...localLogs]
-    setLocalLogs(updated)
-    localStorage.setItem(STORAGE_PREFIX + tunnelId, JSON.stringify(updated))
-    recordDailyUpdate(entry)
+    const res = await fetch('/api/tunnel-photos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tunnelId, ...entry }),
+    })
+    if (!res.ok) {
+      setAnalysisError('Could not save this week - the entry was not stored. Please try again.')
+      return
+    }
+    await loadServerLogs()
+    recordDailyUpdate({ ...entry, id: '', tunnelId })
     setPendingPhotos([])
     setNotes('')
     setAnalysisResult(null)
@@ -151,17 +191,16 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
     }).catch(() => { /* best-effort - the tunnel photo log itself already saved */ })
   }
 
-  const allLogs = [...localLogs, ...seedLogs].sort((a, b) => b.date.localeCompare(a.date))
+  const allLogs = [...serverLogs, ...seedLogs].sort((a, b) => b.date.localeCompare(a.date))
 
   return (
     <div className="space-y-4">
       <Card className="border-brand-200 bg-brand-50">
         <p className="text-xs text-brand-700/70">
-          Upload two photos once a week. Photos are stored in this browser only for now (no object storage connected
-          yet - needs Supabase Storage for real persistence across devices). Photos are analyzed automatically by
-          Claude&apos;s vision model as soon as you select them - a general-purpose AI reading of the images, not a
-          specialized trained plant-pathology model. Saving a week also logs a &quot;Tunnel Photo Review&quot; entry in
-          Daily Updates.
+          Upload two photos once a week. Photos and assessments are saved to the shared database, so every user sees
+          the same log regardless of device. Photos are analyzed automatically by Claude&apos;s vision model as soon
+          as you select them - a general-purpose AI reading of the images, not a specialized trained plant-pathology
+          model. Saving a week also logs a &quot;Tunnel Photo Review&quot; entry in Daily Updates.
         </p>
       </Card>
 
@@ -226,7 +265,11 @@ export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnel
         </button>
       </Card>
 
-      {allLogs.length === 0 ? (
+      {logsLoading ? (
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-brand-700/60">
+          <Loader2 size={16} className="animate-spin" /> Loading...
+        </div>
+      ) : allLogs.length === 0 ? (
         <p className="py-6 text-center text-sm text-brand-700/40">No photos uploaded yet.</p>
       ) : (
         <div className="space-y-3">
