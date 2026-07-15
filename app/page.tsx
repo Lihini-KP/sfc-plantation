@@ -1,13 +1,4 @@
 import {
-  LandPlot,
-  Leaf,
-  Sprout,
-  ShieldCheck,
-  AlertTriangle,
-  Wheat,
-  CalendarClock,
-  Gauge,
-  ListChecks,
   Bird,
   Egg,
   Sparkles,
@@ -15,13 +6,13 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { PageContainer } from '@/components/layout/PageContainer'
-import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { SeverityBadge } from '@/components/ui/Badge'
 import { FinanceTrendChart } from '@/components/dashboard/FinanceTrendChart'
 import { LiveWeatherCard } from '@/components/dashboard/LiveWeatherCard'
+import { DashboardStatsGrid } from '@/components/dashboard/DashboardStatsGrid'
 import { getDashboardStats } from '@/lib/dashboard-stats'
-import { notifications, aiAnalyses, areas } from '@/lib/mock-data'
+import { notifications, aiAnalyses, areas, crops } from '@/lib/mock-data'
 import { formatCurrency, timeAgo } from '@/lib/format'
 
 export default function DashboardPage() {
@@ -34,18 +25,7 @@ export default function DashboardPage() {
 
   return (
     <PageContainer title="Dashboard">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-        <StatCard label="Plantation Area" value={`${s.totalAreaAcres.toFixed(1)} ac`} icon={LandPlot} />
-        <StatCard label="Cultivated Area" value={`${s.totalCultivatedAreaAcres.toFixed(1)} ac`} icon={Leaf} tone="earth" />
-        <StatCard label="Crops" value={`${s.numberOfCrops}`} icon={Sprout} />
-        <StatCard label="Total Plants" value={s.totalPlants.toLocaleString()} icon={Sprout} />
-        <StatCard label="Healthy Plants" value={s.healthyPlants.toLocaleString()} icon={ShieldCheck} />
-        <StatCard label="Needs Attention" value={s.attentionPlants.toLocaleString()} icon={AlertTriangle} tone="warn" />
-        <StatCard label="Harvest Ready Areas" value={`${s.harvestReadyAreas}`} icon={Wheat} />
-        <StatCard label="Upcoming Harvests" value={`${s.upcomingHarvests}`} icon={CalendarClock} tone="earth" />
-        <StatCard label="Weekly Production Est. (AI)" value={`${s.weeklyProductionEstimateKg} kg`} icon={Gauge} hint="Illustrative forecast" />
-        <StatCard label="Active Tasks" value={`${s.activeTasks}`} icon={ListChecks} tone="earth" />
-      </div>
+      <DashboardStatsGrid stats={s} areas={areas} crops={crops} aiAnalyses={aiAnalyses} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">

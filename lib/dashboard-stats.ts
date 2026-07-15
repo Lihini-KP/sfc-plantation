@@ -1,12 +1,6 @@
-import { areas, crops, tasks, aiAnalyses, recentMonthlyDetail } from '@/lib/mock-data'
+import { tasks, aiAnalyses, recentMonthlyDetail } from '@/lib/mock-data'
 
 export function getDashboardStats() {
-  const totalAreaAcres = areas.reduce((sum, a) => sum + a.sizeAcres, 0)
-  const totalPlants = areas.reduce((sum, a) => sum + a.plantCount, 0)
-  const healthyPlants = areas.filter((a) => a.healthStatus === 'healthy').reduce((sum, a) => sum + a.plantCount, 0)
-  const attentionPlants = totalPlants - healthyPlants
-  const harvestReadyAreas = aiAnalyses.filter((a) => a.harvestReadinessPct >= 85).length
-  const upcomingHarvests = aiAnalyses.filter((a) => a.daysRemaining <= 21).length
   const weeklyProductionEstimateKg = Math.round(
     aiAnalyses.reduce((sum, a) => sum + a.estimatedYieldKg / (a.daysRemaining <= 7 ? 1 : 7), 0)
   )
@@ -18,14 +12,17 @@ export function getDashboardStats() {
   const latestMonthProfitLoss = latestMonth.profitLoss
 
   return {
-    totalAreaAcres,
-    totalCultivatedAreaAcres: totalAreaAcres,
-    numberOfCrops: crops.length,
-    totalPlants,
-    healthyPlants,
-    attentionPlants,
-    harvestReadyAreas,
-    upcomingHarvests,
+    // Updated current figures provided 2026-07-15, ahead of the individual
+    // plantation area/crop records in lib/mock-data being updated to match -
+    // see DashboardStatsGrid's PROVISIONAL_NOTE shown on these cards.
+    totalAreaAcres: 4.5,
+    totalCultivatedAreaAcres: 2.5,
+    numberOfCrops: 14,
+    totalPlants: 6345,
+    healthyPlants: 4500,
+    attentionPlants: 1845,
+    harvestReadyAreas: 7,
+    upcomingHarvests: 7,
     weeklyProductionEstimateKg,
     activeTasks,
     latestMonth: latestMonth.month,
