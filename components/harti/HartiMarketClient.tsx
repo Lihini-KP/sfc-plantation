@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import {
-  RefreshCw, ExternalLink, Loader2, TrendingUp, TrendingDown, Minus,
-  FileText, Scale, HeartPulse, Lightbulb, ListChecks, AlertTriangle, CalendarClock,
+  RefreshCw, ExternalLink, Loader2, CalendarClock,
+  LayoutDashboard, TrendingUp, Scale, Tent, LineChart, Compass, FileText,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { greenhouses } from '@/lib/mock-data/greenhouses'
@@ -12,18 +12,27 @@ import { formatDate } from '@/lib/format'
 import { useRole } from '@/lib/role-context'
 import type { TunnelPhotoEntry } from '@/lib/types'
 import type { HartiAnalysis } from '@/lib/harti-types'
-import { DashboardSummaryCard } from './DashboardSummaryCard'
 import { WeeklyReportsSection, type WeeklyReportEntry } from './WeeklyReportsSection'
-import {
-  MarketTrendSection, PlantationComparisonSection, TunnelHealthSection,
-  RecommendationsSection, ActionItemsSection, RiskAlertsSection,
-} from './AnalysisView'
+import { MarketTrendSection, PlantationComparisonSection, TunnelHealthSection, RecommendationsSection } from './AnalysisView'
+import { ExecutiveSummaryTab } from './ExecutiveSummaryTab'
+import { MarketOpportunitiesTab } from './MarketOpportunitiesTab'
+import { PassionFruitPriceChart } from './PassionFruitPriceChart'
+import { TabBar, type TabDef } from './TabBar'
 
 const WEEKLY_SOURCE_URL = 'https://www.harti.gov.lk/weekly-price.php'
 const STORAGE_PREFIX = 'sfc-tunnel-photos-'
-const WEEKLY_REPORTS_PANEL_ID = 'weekly-reports-panel'
 
-type TabKey = 'cropTrend' | 'plantationComparison' | 'tunnelHealth' | 'recommendations' | 'actionItems' | 'riskAlerts'
+type TabKey = 'executiveSummary' | 'cropTrend' | 'plantationComparison' | 'tunnelAnalysis' | 'priceForecast' | 'marketOpportunities' | 'weeklyReports'
+
+const TABS: TabDef<TabKey>[] = [
+  { key: 'executiveSummary', label: 'Executive Summary', icon: LayoutDashboard },
+  { key: 'cropTrend', label: 'Crop Wise Market Trend', icon: TrendingUp },
+  { key: 'plantationComparison', label: 'Plantation Market Comparison', icon: Scale },
+  { key: 'tunnelAnalysis', label: 'Tunnel Crop Analysis', icon: Tent },
+  { key: 'priceForecast', label: 'Price Forecast', icon: LineChart },
+  { key: 'marketOpportunities', label: 'Market Opportunities', icon: Compass },
+  { key: 'weeklyReports', label: 'Weekly Reports', icon: FileText },
+]
 
 function gatherTunnelPhotoData() {
   return greenhouses.map((g) => {
@@ -60,8 +69,7 @@ export function HartiMarketClient() {
 
   const [history, setHistory] = useState<WeeklyReportEntry[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
-  const [priceThisWeekRs, setPriceThisWeekRs] = useState<number | null>(null)
-  const [activeTab, setActiveTab] = useState<TabKey>('cropTrend')
+  const [activeTab, setActiveTab] = useState<TabKey>('executiveSummary')
 
   const [runStatus, setRunStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [runError, setRunError] = useState('')
@@ -86,28 +94,11 @@ export function HartiMarketClient() {
   // matched strictly against today's calendar date: HARTI's own weekly
   // bulletin can lag the calendar by a while (confirmed - their site can go
   // a month or more between publishes), so requiring the report's exact
-  // date range to contain today would leave the cards empty indefinitely
+  // date range to contain today would leave the tabs empty indefinitely
   // even right after a fresh, real save. The Monday cron (or an admin's
   // manual run) is what keeps this current, not a client-side date check.
-  const ascendingHistory = [...history].sort((a, b) => a.weekStart.localeCompare(b.weekStart))
   const currentWeekReport = history.length ? [...history].sort((a, b) => b.weekStart.localeCompare(a.weekStart))[0] : null
-
-  const currentWeekStart = currentWeekReport?.weekStart ?? null
-
-  useEffect(() => {
-    if (!currentWeekStart) return
-    let cancelled = false
-    fetch('/api/harti-analysis/price-history')
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return
-        const points: { weekStart: string; avgPriceRs: number }[] = data.points || []
-        const match = points.find((p) => p.weekStart === currentWeekStart)
-        setPriceThisWeekRs(match ? match.avgPriceRs : null)
-      })
-      .catch(() => { /* nice-to-have stat only */ })
-    return () => { cancelled = true }
-  }, [currentWeekStart])
+  const analysis = currentWeekReport?.analysis ?? null
 
   // Admin-only: manually (re)run the AI analysis for the current week -
   // otherwise the page only ever displays whatever the scheduled Monday job
@@ -163,208 +154,121 @@ export function HartiMarketClient() {
     }
   }
 
-  // --- Dashboard summary card stats, all derived from the current week's saved report ---
-  const analysis = currentWeekReport?.analysis ?? null
-  const dash = (value: string) => (analysis ? value : '—')
-
-  const cropMarketTrends = analysis?.cropMarketTrends ?? []
-  const primaryTrend = cropMarketTrends[0]
-  const trendText = primaryTrend ? (primaryTrend.trend === 'up' ? 'Rising' : primaryTrend.trend === 'down' ? 'Falling' : 'Stable') : '—'
-  const TrendIcon = primaryTrend ? (primaryTrend.trend === 'up' ? TrendingUp : primaryTrend.trend === 'down' ? TrendingDown : Minus) : TrendingUp
-
-  const latestReport = currentWeekReport
-  const latestReportWeekNumber = latestReport ? ascendingHistory.findIndex((w) => w.weekStart === latestReport.weekStart) + 1 : null
-
-  const plantationVsMarket = analysis?.plantationVsMarket ?? []
-  const misalignedCount = plantationVsMarket.filter((p) => p.alignment.toLowerCase().includes('misalign')).length
-
-  const tunnelHealthScores = analysis?.tunnelHealthScores ?? []
-  const scoredTunnels = tunnelHealthScores.filter((t) => t.dataAvailable)
-  const avgTunnelHealth = scoredTunnels.length ? Math.round(scoredTunnels.reduce((sum, t) => sum + t.score, 0) / scoredTunnels.length) : null
-  const healthyTunnels = scoredTunnels.filter((t) => t.score >= 70).length
-  const warningTunnels = scoredTunnels.filter((t) => t.score >= 40 && t.score < 70).length
-  const criticalTunnels = scoredTunnels.filter((t) => t.score < 40).length
-
-  const allIssues = (analysis?.tunnels ?? []).flatMap((t) => t.issues)
-  const highPriorityCount = allIssues.filter((i) => ['high', 'critical'].includes(i.priority.toLowerCase())).length
-  const mediumPriorityCount = allIssues.filter((i) => i.priority.toLowerCase() === 'medium').length
-  const lowPriorityCount = allIssues.filter((i) => i.priority.toLowerCase() === 'low').length
-
-  const actionItems = analysis?.actionItems ?? []
-
-  const riskAlerts = analysis?.riskAlerts ?? []
-  const criticalAlertCount = riskAlerts.filter((r) => r.severity.toLowerCase() === 'critical').length
-  const mediumAlertCount = riskAlerts.filter((r) => r.severity.toLowerCase() === 'medium').length
+  const bulletinSubtitle = currentWeekReport
+    ? `Weekly Food Commodities Bulletin - Week of ${formatDate(currentWeekReport.weekStart)} to ${formatDate(currentWeekReport.weekEnd)}`
+    : 'Weekly Food Commodities Bulletin'
 
   return (
-    <div className="space-y-6">
-      <Card className="border-brand-200 bg-brand-50">
-        <p className="text-xs text-brand-700/70">
-          Scoped to our 5 greenhouse tunnels (Alpha, Bravo, Charlie, Oregano, Echo), the Passion Fruit plot, and the
-          Moringa plot against HARTI&apos;s (Hector Kobbekaduwa Agrarian Research and Training Institute) real WEEKLY
-          Food Commodities Bulletin. Analysis runs automatically every Monday and is saved as a Weekly Report - this
-          page always shows the latest saved snapshot rather than calling the AI on every visit. HARTI publishes no
-          market price data for Moringa, so it is shown with our real plantation data only, not an invented trend.
-        </p>
-      </Card>
-
-      {saveWarning && (
-        <Card className="border-amber-300 bg-amber-50">
-          <p className="text-xs text-amber-800">{saveWarning} - the analysis ran successfully but won&apos;t appear in Weekly Reports until this is fixed.</p>
+    <div className="-mt-2">
+      <div className="space-y-4 pb-4">
+        <Card className="border-brand-200 bg-brand-50">
+          <p className="text-xs text-brand-700/70">
+            Scoped to our 5 greenhouse tunnels (Alpha, Bravo, Charlie, Oregano, Echo), the Passion Fruit plot, and the
+            Moringa plot against HARTI&apos;s (Hector Kobbekaduwa Agrarian Research and Training Institute) real
+            WEEKLY Food Commodities Bulletin. Analysis runs automatically every Monday and is saved as a Weekly
+            Report - this page always shows the latest saved snapshot rather than calling the AI on every visit.
+          </p>
         </Card>
-      )}
 
-      {runStatus === 'error' && (
-        <Card className="border-status-critical/30 bg-status-critical/5">
-          <p className="text-sm text-status-critical">{runError}</p>
-        </Card>
-      )}
-
-      <div className="flex items-center justify-between">
-        <a
-          href={WEEKLY_SOURCE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline"
-        >
-          View HARTI Market Information <ExternalLink size={14} />
-        </a>
-        {isAdmin && (
-          <button
-            onClick={runAnalysisNow}
-            disabled={runStatus === 'loading'}
-            className="flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-          >
-            <RefreshCw size={15} className={runStatus === 'loading' ? 'animate-spin' : ''} />
-            {runStatus === 'loading' ? 'Analyzing...' : 'Run Analysis'}
-          </button>
+        {saveWarning && (
+          <Card className="border-amber-300 bg-amber-50">
+            <p className="text-xs text-amber-800">{saveWarning} - the analysis ran successfully but won&apos;t appear in Weekly Reports until this is fixed.</p>
+          </Card>
         )}
+
+        {runStatus === 'error' && (
+          <Card className="border-status-critical/30 bg-status-critical/5">
+            <p className="text-sm text-status-critical">{runError}</p>
+          </Card>
+        )}
+
+        <div className="flex items-center justify-between">
+          <a
+            href={WEEKLY_SOURCE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline"
+          >
+            View HARTI Market Information <ExternalLink size={14} />
+          </a>
+          {isAdmin && (
+            <button
+              onClick={runAnalysisNow}
+              disabled={runStatus === 'loading'}
+              className="flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              <RefreshCw size={15} className={runStatus === 'loading' ? 'animate-spin' : ''} />
+              {runStatus === 'loading' ? 'Analyzing...' : 'Run Analysis'}
+            </button>
+          )}
+        </div>
       </div>
 
-      {historyLoading && (
-        <Card>
-          <div className="flex items-center justify-center gap-2 py-10 text-sm text-brand-700/60">
-            <Loader2 size={16} className="animate-spin" /> Loading this week&apos;s report...
-          </div>
-        </Card>
-      )}
+      <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-      {!historyLoading && !currentWeekReport && (
-        <Card className="border-dashed border-brand-200 bg-brand-50/50">
-          <div className="flex flex-col items-center gap-2 py-6 text-center">
-            <CalendarClock size={22} className="text-brand-600" />
-            <p className="text-sm font-medium text-brand-800">No report generated for this week yet.</p>
-            <p className="text-xs text-brand-700/60">Next scheduled analysis: Monday 08:00 AM.</p>
-          </div>
-        </Card>
-      )}
+      <div className="space-y-6 pt-6">
+        {historyLoading && (
+          <Card>
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-brand-700/60">
+              <Loader2 size={16} className="animate-spin" /> Loading...
+            </div>
+          </Card>
+        )}
 
-      {!historyLoading && currentWeekReport && (
-        <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <DashboardSummaryCard
-              icon={TrendIcon}
-              title="Crop Wise Market Trend"
-              active={activeTab === 'cropTrend'}
-              onClick={() => setActiveTab('cropTrend')}
-              tone={primaryTrend?.trend === 'down' ? 'critical' : 'brand'}
-              stats={[
-                { label: 'Crops Tracked', value: dash(`${cropMarketTrends.length}`) },
-                { label: "This Week's Movement", value: primaryTrend ? `${primaryTrend.changePct > 0 ? '+' : ''}${primaryTrend.changePct}%` : '—' },
-                { label: 'Overall Trend', value: trendText },
-              ]}
-            />
-            <DashboardSummaryCard
-              icon={FileText}
-              title="Weekly Reports"
-              tone="earth"
-              onClick={() => document.getElementById(WEEKLY_REPORTS_PANEL_ID)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              stats={[
-                { label: 'Latest Report', value: latestReportWeekNumber ? `Week ${String(latestReportWeekNumber).padStart(2, '0')}` : 'None yet' },
-                { label: 'Generated', value: latestReport ? formatDate(latestReport.generatedAt.slice(0, 10)) : '—' },
-              ]}
-            />
-            <DashboardSummaryCard
-              icon={Scale}
-              title="Plantation vs Market"
-              active={activeTab === 'plantationComparison'}
-              onClick={() => setActiveTab('plantationComparison')}
-              stats={[
-                { label: 'Market Price', value: priceThisWeekRs != null ? `Rs ${Math.round(priceThisWeekRs)}/kg` : '—' },
-                { label: 'Crops Compared', value: dash(`${plantationVsMarket.length}`) },
-                { label: 'Misaligned', value: dash(`${misalignedCount}`) },
-              ]}
-            />
-            <DashboardSummaryCard
-              icon={HeartPulse}
-              title="Tunnel Health Score"
-              active={activeTab === 'tunnelHealth'}
-              onClick={() => setActiveTab('tunnelHealth')}
-              tone={criticalTunnels > 0 ? 'critical' : warningTunnels > 0 ? 'warn' : 'brand'}
-              stats={[
-                { label: 'Average Score', value: avgTunnelHealth !== null ? `${avgTunnelHealth}%` : 'No data' },
-                { label: 'Healthy', value: dash(`${healthyTunnels}`) },
-                { label: 'Warning', value: dash(`${warningTunnels}`) },
-                { label: 'Critical', value: dash(`${criticalTunnels}`) },
-              ]}
-            />
-            <DashboardSummaryCard
-              icon={Lightbulb}
-              title="AI Recommendations"
-              active={activeTab === 'recommendations'}
-              onClick={() => setActiveTab('recommendations')}
-              tone="earth"
-              stats={[
-                { label: 'Total', value: dash(`${allIssues.length}`) },
-                { label: 'High Priority', value: dash(`${highPriorityCount}`) },
-                { label: 'Medium Priority', value: dash(`${mediumPriorityCount}`) },
-                { label: 'Low Priority', value: dash(`${lowPriorityCount}`) },
-              ]}
-            />
-            <DashboardSummaryCard
-              icon={ListChecks}
-              title="Action Items"
-              active={activeTab === 'actionItems'}
-              onClick={() => setActiveTab('actionItems')}
-              stats={[
-                { label: 'Pending', value: dash(`${actionItems.length}`) },
-                { label: 'In Progress', value: dash('0') },
-                { label: 'Completed', value: dash('0') },
-              ]}
-            />
-            <DashboardSummaryCard
-              icon={AlertTriangle}
-              title="Risk Alerts"
-              active={activeTab === 'riskAlerts'}
-              onClick={() => setActiveTab('riskAlerts')}
-              tone={criticalAlertCount > 0 ? 'critical' : riskAlerts.length > 0 ? 'warn' : 'brand'}
-              stats={[
-                { label: 'Active', value: dash(`${riskAlerts.length}`) },
-                { label: 'Critical', value: dash(`${criticalAlertCount}`) },
-                { label: 'Medium', value: dash(`${mediumAlertCount}`) },
-              ]}
-            />
-          </div>
+        {!historyLoading && !analysis && activeTab !== 'weeklyReports' && (
+          <Card className="border-dashed border-brand-200 bg-brand-50/50">
+            <div className="flex flex-col items-center gap-2 py-6 text-center">
+              <CalendarClock size={22} className="text-brand-600" />
+              <p className="text-sm font-medium text-brand-800">No report generated for this week yet.</p>
+              <p className="text-xs text-brand-700/60">Next scheduled analysis: Monday 08:00 AM.</p>
+            </div>
+          </Card>
+        )}
 
-          {/* Single detail panel - shows whichever card/tab is active */}
-          <div className="space-y-6">
-            {activeTab === 'cropTrend' && analysis && (
-              <MarketTrendSection
-                analysis={analysis}
-                marketSummarySubtitle={`Weekly Food Commodities Bulletin - Week of ${formatDate(currentWeekReport.weekStart)} to ${formatDate(currentWeekReport.weekEnd)}`}
-              />
+        {!historyLoading && analysis && (
+          <>
+            {activeTab === 'executiveSummary' && <ExecutiveSummaryTab analysis={analysis} subtitle={bulletinSubtitle} />}
+
+            {activeTab === 'cropTrend' && (
+              <div className="harti-tab-content space-y-6">
+                <MarketTrendSection analysis={analysis} marketSummarySubtitle={bulletinSubtitle} />
+              </div>
             )}
-            {activeTab === 'plantationComparison' && analysis && <PlantationComparisonSection analysis={analysis} />}
-            {activeTab === 'tunnelHealth' && analysis && <TunnelHealthSection analysis={analysis} />}
-            {activeTab === 'recommendations' && analysis && <RecommendationsSection analysis={analysis} />}
-            {activeTab === 'actionItems' && analysis && <ActionItemsSection analysis={analysis} />}
-            {activeTab === 'riskAlerts' && analysis && <RiskAlertsSection analysis={analysis} />}
-          </div>
-        </>
-      )}
 
-      <div id={WEEKLY_REPORTS_PANEL_ID} className="scroll-mt-20">
-        <WeeklyReportsSection history={history} loading={historyLoading} />
+            {activeTab === 'plantationComparison' && (
+              <div className="harti-tab-content space-y-6">
+                <PlantationComparisonSection analysis={analysis} />
+              </div>
+            )}
+
+            {activeTab === 'tunnelAnalysis' && (
+              <div className="harti-tab-content space-y-6">
+                <TunnelHealthSection analysis={analysis} />
+                <RecommendationsSection analysis={analysis} />
+              </div>
+            )}
+
+            {activeTab === 'priceForecast' && (
+              <div className="harti-tab-content space-y-6">
+                <Card className="border-brand-200 bg-brand-50">
+                  <p className="text-xs text-brand-700/70">
+                    Real Colombo wholesale Passion Fruit prices saved week by week - a historical trend, not a
+                    predictive forecast (we don&apos;t generate price predictions).
+                  </p>
+                </Card>
+                <PassionFruitPriceChart />
+              </div>
+            )}
+
+            {activeTab === 'marketOpportunities' && <MarketOpportunitiesTab analysis={analysis} />}
+          </>
+        )}
+
+        {activeTab === 'weeklyReports' && (
+          <div className="harti-tab-content">
+            <WeeklyReportsSection history={history} loading={historyLoading} />
+          </div>
+        )}
       </div>
     </div>
   )
