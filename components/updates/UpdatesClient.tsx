@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, X, Image as ImageIcon, Video, RefreshCw, AlertTriangle } from 'lucide-react'
+import clsx from 'clsx'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { areas, crops, dailyUpdates as initialUpdates } from '@/lib/mock-data'
 import type { DailyUpdate } from '@/lib/types'
 import { formatDate } from '@/lib/format'
 import { fetchLiveWeather, type LiveWeather } from '@/lib/weather-api'
 import { ESTATE_LOCATION } from '@/lib/estate-config'
+import { DailySummarySection } from './DailySummarySection'
 
 const activityTypes = ['Watering', 'Fertilizing', 'Weeding', 'Pest control', 'Disease inspection', 'Pruning', 'Harvesting', 'Tunnel Photo Review']
 const staffOptions = ['R Thambiraja', 'W A A N Wijesooriya', 'N M G Dharmasena', 'W.G. Dissanayaka', 'Malar Kanthi', 'Richard']
@@ -60,6 +62,7 @@ function compressImage(dataUrl: string, maxDimension = 1280, quality = 0.75): Pr
 }
 
 export function UpdatesClient() {
+  const [activeTab, setActiveTab] = useState<'log' | 'summary'>('log')
   const [updates, setUpdates] = useState<DailyUpdate[]>(initialUpdates)
   const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'saving' | 'error'>('idle')
@@ -164,6 +167,27 @@ export function UpdatesClient() {
           <p className="text-xs text-status-critical">Couldn&apos;t load updates from the database. Check your connection and reload the page.</p>
         </Card>
       )}
+
+      <div className="flex gap-2 border-b border-brand-100">
+        {(['log', 'summary'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={clsx(
+              'rounded-t-lg px-4 py-2 text-sm font-medium transition-colors',
+              activeTab === tab ? 'border-b-2 border-brand-600 text-brand-700' : 'text-brand-700/50 hover:text-brand-700',
+            )}
+          >
+            {tab === 'log' ? 'Update Log' : 'Daily Summary'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'summary' && <DailySummarySection />}
+
+      {activeTab === 'log' && (
+        <>
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardHeader title="Filters" subtitle="Filter the plantation update history" />
@@ -242,6 +266,8 @@ export function UpdatesClient() {
           )
         })}
       </div>
+        </>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">

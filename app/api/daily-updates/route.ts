@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { regenerateAndNotify } from '@/lib/daily-summary'
 import type { DailyUpdate } from '@/lib/types'
 
 function toRow(u: Omit<DailyUpdate, 'id'>) {
@@ -73,5 +74,13 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Best-effort: regenerate today's AI summary and mirror it to Telegram.
+  // A failure here (AI or Telegram down, not configured, etc.) must not
+  // block the update itself from being saved.
+  try {
+    await regenerateAndNotify(body.date)
+  } catch { /* the daily update itself already saved - summary/Telegram is secondary */ }
+
   return NextResponse.json({ update: fromRow(data) })
 }
