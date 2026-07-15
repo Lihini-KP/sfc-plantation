@@ -54,10 +54,6 @@ function gatherTunnelPhotoData() {
   })
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export function HartiMarketClient() {
   const { role } = useRole()
   const isAdmin = role === 'Admin'
@@ -86,10 +82,15 @@ export function HartiMarketClient() {
     loadHistory()
   }, [])
 
-  // The current week's report, if the scheduled Monday job (or an admin's
-  // manual run) has already saved one - never triggers a new AI call itself.
-  const today = todayIso()
-  const currentWeekReport = history.find((w) => w.weekStart <= today && today <= w.weekEnd) ?? null
+  // The most recently saved report - shown as "this week's" snapshot. Not
+  // matched strictly against today's calendar date: HARTI's own weekly
+  // bulletin can lag the calendar by a while (confirmed - their site can go
+  // a month or more between publishes), so requiring the report's exact
+  // date range to contain today would leave the cards empty indefinitely
+  // even right after a fresh, real save. The Monday cron (or an admin's
+  // manual run) is what keeps this current, not a client-side date check.
+  const ascendingHistory = [...history].sort((a, b) => a.weekStart.localeCompare(b.weekStart))
+  const currentWeekReport = history.length ? [...history].sort((a, b) => b.weekStart.localeCompare(a.weekStart))[0] : null
 
   const currentWeekStart = currentWeekReport?.weekStart ?? null
 
@@ -171,8 +172,7 @@ export function HartiMarketClient() {
   const trendText = primaryTrend ? (primaryTrend.trend === 'up' ? 'Rising' : primaryTrend.trend === 'down' ? 'Falling' : 'Stable') : '—'
   const TrendIcon = primaryTrend ? (primaryTrend.trend === 'up' ? TrendingUp : primaryTrend.trend === 'down' ? TrendingDown : Minus) : TrendingUp
 
-  const ascendingHistory = [...history].sort((a, b) => a.weekStart.localeCompare(b.weekStart))
-  const latestReport = history.length ? [...history].sort((a, b) => b.weekStart.localeCompare(a.weekStart))[0] : null
+  const latestReport = currentWeekReport
   const latestReportWeekNumber = latestReport ? ascendingHistory.findIndex((w) => w.weekStart === latestReport.weekStart) + 1 : null
 
   const plantationVsMarket = analysis?.plantationVsMarket ?? []
