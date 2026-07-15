@@ -160,6 +160,27 @@ export function HartiMarketClient() {
 
   return (
     <div className="-mt-2">
+      {/* Hero banner - real aerial photo of the estate (same image used on
+          the login page), not a stock/generic image */}
+      <div className="relative -mx-4 -mt-4 mb-4 h-32 overflow-hidden sm:-mx-6 sm:-mt-6 sm:h-40">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/estate-photo.jpg"
+          alt="Aerial view of the Silk Food Ceylon estate - tunnels, thatched structures and crop plots"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(120deg, rgba(12,27,21,0.88) 0%, rgba(21,128,61,0.55) 55%, rgba(12,27,21,0.35) 100%)' }}
+        />
+        <div className="relative z-10 flex h-full flex-col justify-end p-4 sm:p-6">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">Silk Food Ceylon</p>
+          <p className="mt-1 max-w-xl text-xs text-white/85 sm:text-sm">
+            Real HARTI weekly bulletin data compared against our 5 greenhouse tunnels and open-field crops.
+          </p>
+        </div>
+      </div>
+
       <div className="space-y-4 pb-4">
         <Card className="border-brand-200 bg-brand-50">
           <p className="text-xs text-brand-700/70">
