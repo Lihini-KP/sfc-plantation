@@ -56,3 +56,17 @@ export async function sendTelegramPhoto(dataUrl: string, caption?: string): Prom
   const data = await res.json()
   return !!data.ok
 }
+
+export async function sendTelegramDocument(bytes: Uint8Array, filename: string, caption?: string): Promise<boolean> {
+  const config = getConfig()
+  if (!config) return false
+
+  const form = new FormData()
+  form.append('chat_id', config.chatId)
+  if (caption) form.append('caption', caption)
+  form.append('document', new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }), filename)
+
+  const res = await fetch(`${TELEGRAM_API}/bot${config.token}/sendDocument`, { method: 'POST', body: form })
+  const data = await res.json()
+  return !!data.ok
+}
