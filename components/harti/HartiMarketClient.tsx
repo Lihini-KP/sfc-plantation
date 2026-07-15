@@ -160,74 +160,77 @@ export function HartiMarketClient() {
 
   return (
     <div className="-mt-2">
-      {/* Hero banner - real aerial photo of the estate (same image used on
-          the login page), not a stock/generic image */}
-      <div className="relative -mx-4 -mt-4 mb-4 h-32 overflow-hidden sm:-mx-6 sm:-mt-6 sm:h-40">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/estate-photo.jpg"
-          alt="Aerial view of the Silk Food Ceylon estate - tunnels, thatched structures and crop plots"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(120deg, rgba(12,27,21,0.88) 0%, rgba(21,128,61,0.55) 55%, rgba(12,27,21,0.35) 100%)' }}
-        />
-        <div className="relative z-10 flex h-full flex-col justify-end p-4 sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">Silk Food Ceylon</p>
-          <p className="mt-1 max-w-xl text-xs text-white/85 sm:text-sm">
-            Real HARTI weekly bulletin data compared against our 5 greenhouse tunnels and open-field crops.
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-4 pb-4">
-        <Card className="border-brand-200 bg-brand-50">
-          <p className="text-xs text-brand-700/70">
-            Scoped to our 5 greenhouse tunnels (Alpha, Bravo, Charlie, Oregano, Echo), the Passion Fruit plot, and the
-            Moringa plot against HARTI&apos;s (Hector Kobbekaduwa Agrarian Research and Training Institute) real
-            WEEKLY Food Commodities Bulletin. Analysis runs automatically every Monday and is saved as a Weekly
-            Report - this page always shows the latest saved snapshot rather than calling the AI on every visit.
-          </p>
-        </Card>
-
-        {saveWarning && (
-          <Card className="border-amber-300 bg-amber-50">
-            <p className="text-xs text-amber-800">{saveWarning} - the analysis ran successfully but won&apos;t appear in Weekly Reports until this is fixed.</p>
-          </Card>
-        )}
-
-        {runStatus === 'error' && (
-          <Card className="border-status-critical/30 bg-status-critical/5">
-            <p className="text-sm text-status-critical">{runError}</p>
-          </Card>
-        )}
-
-        <div className="flex items-center justify-between">
-          <a
-            href={WEEKLY_SOURCE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline"
-          >
-            View HARTI Market Information <ExternalLink size={14} />
-          </a>
-          {isAdmin && (
-            <button
-              onClick={runAnalysisNow}
-              disabled={runStatus === 'loading'}
-              className="flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-            >
-              <RefreshCw size={15} className={runStatus === 'loading' ? 'animate-spin' : ''} />
-              {runStatus === 'loading' ? 'Analyzing...' : 'Run Analysis'}
-            </button>
-          )}
-        </div>
-      </div>
-
       <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       <div className="space-y-6 pt-6">
+        {activeTab === 'executiveSummary' && (
+          <div className="harti-tab-content space-y-4">
+            {/* Hero banner - real aerial photo of the estate (same image used
+                on the login page), not a stock/generic image */}
+            <div className="relative -mx-4 -mt-2 h-32 overflow-hidden sm:-mx-6 sm:h-40">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/estate-photo.jpg"
+                alt="Aerial view of the Silk Food Ceylon estate - tunnels, thatched structures and crop plots"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div
+                className="absolute inset-0"
+                style={{ background: 'linear-gradient(120deg, rgba(12,27,21,0.88) 0%, rgba(21,128,61,0.55) 55%, rgba(12,27,21,0.35) 100%)' }}
+              />
+              <div className="relative z-10 flex h-full flex-col justify-end p-4 sm:p-6">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">Silk Food Ceylon</p>
+                <p className="mt-1 max-w-xl text-xs text-white/85 sm:text-sm">
+                  Real HARTI weekly bulletin data compared against our 5 greenhouse tunnels and open-field crops.
+                </p>
+              </div>
+            </div>
+
+            <Card className="border-brand-200 bg-brand-50">
+              <p className="text-xs text-brand-700/70">
+                Scoped to our 5 greenhouse tunnels (Alpha, Bravo, Charlie, Oregano, Echo), the Passion Fruit plot, and
+                the Moringa plot against HARTI&apos;s (Hector Kobbekaduwa Agrarian Research and Training Institute)
+                real WEEKLY Food Commodities Bulletin. Analysis runs automatically every Monday and is saved as a
+                Weekly Report - this page always shows the latest saved snapshot rather than calling the AI on every
+                visit.
+              </p>
+            </Card>
+
+            {saveWarning && (
+              <Card className="border-amber-300 bg-amber-50">
+                <p className="text-xs text-amber-800">{saveWarning} - the analysis ran successfully but won&apos;t appear in Weekly Reports until this is fixed.</p>
+              </Card>
+            )}
+
+            {runStatus === 'error' && (
+              <Card className="border-status-critical/30 bg-status-critical/5">
+                <p className="text-sm text-status-critical">{runError}</p>
+              </Card>
+            )}
+
+            <div className="flex items-center justify-between">
+              <a
+                href={WEEKLY_SOURCE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline"
+              >
+                View HARTI Market Information <ExternalLink size={14} />
+              </a>
+              {isAdmin && (
+                <button
+                  onClick={runAnalysisNow}
+                  disabled={runStatus === 'loading'}
+                  className="flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                >
+                  <RefreshCw size={15} className={runStatus === 'loading' ? 'animate-spin' : ''} />
+                  {runStatus === 'loading' ? 'Analyzing...' : 'Run Analysis'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {historyLoading && (
           <Card>
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-brand-700/60">
