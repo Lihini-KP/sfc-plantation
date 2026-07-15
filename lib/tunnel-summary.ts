@@ -162,5 +162,5 @@ export async function sendTunnelHealthReport() {
   const report = await writeReport(entries)
   const pdfBytes = await buildReportPdf(entries, report, dateLabel)
 
-  await sendTelegramDocument(pdfBytes, `Tunnel-Health-Report-${dateLabel.replace(/\s+/g, '-')}.pdf`, `Tunnel Health Report - ${dateLabel}`)
+  return sendTelegramDocument(pdfBytes, `Tunnel-Health-Report-${dateLabel.replace(/\s+/g, '-')}.pdf`, `Tunnel Health Report - ${dateLabel}`)
 }

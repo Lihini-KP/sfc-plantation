@@ -15,7 +15,7 @@ export function getDashboardStats() {
     // Updated current figures provided 2026-07-15, ahead of the individual
     // plantation area/crop records in lib/mock-data being updated to match -
     // see DashboardStatsGrid's PROVISIONAL_NOTE shown on these cards.
-    totalAreaAcres: 4.5,
+    totalAreaAcres: 7.5,
     totalCultivatedAreaAcres: 2.5,
     numberOfCrops: 14,
     totalPlants: 6345,
