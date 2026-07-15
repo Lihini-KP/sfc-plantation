@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { sendTunnelHealthReport } from '@/lib/tunnel-summary'
 import type { Severity } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -75,6 +76,12 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 502 })
   }
+
+  // Best-effort: report the latest status of all 5 tunnels to Telegram
+  // whenever any tunnel is updated. A failure here must not undo the save.
+  try {
+    await sendTunnelHealthReport()
+  } catch { /* the tunnel photo log itself already saved */ }
 
   return NextResponse.json({ ok: true, id: data.id })
 }
