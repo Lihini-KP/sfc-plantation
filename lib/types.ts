@@ -67,7 +67,8 @@ export interface DailyUpdate {
   id: string
   date: string
   areaId: string | null // null for updates not tied to a plantation area (e.g. tunnel photo reviews)
-  cropId: string | null
+  cropId: string | null // legacy single-crop field, kept for older rows
+  cropIds?: string[] // current field - lets one entry cover multiple crops, no limit
   activity: string
   staff: string[]
   weather: string

@@ -8,6 +8,7 @@ interface DailyUpdateRow {
   date: string
   area_id: string | null
   crop_id: string | null
+  crop_ids: string[] | null
   activity: string
   staff: string[]
   weather: string
@@ -26,7 +27,8 @@ async function writeSummary(rows: DailyUpdateRow[]): Promise<string> {
   const plainList = rows
     .map((r, i) => {
       const area = areas.find((a) => a.id === r.area_id)
-      const crop = crops.find((c) => c.id === r.crop_id)
+      const cropIdsForRow = r.crop_ids?.length ? r.crop_ids : r.crop_id ? [r.crop_id] : []
+      const cropNames = cropIdsForRow.map((id) => crops.find((c) => c.id === id)?.name).filter(Boolean)
       const detailParts = [
         r.watering_details && `Watering: ${r.watering_details}`,
         r.fertilizer_applied && `Fertilizer: ${r.fertilizer_applied}`,
@@ -35,7 +37,7 @@ async function writeSummary(rows: DailyUpdateRow[]): Promise<string> {
         r.pest_issues && `Pests: ${r.pest_issues}`,
         r.notes && `Notes: ${r.notes}`,
       ].filter(Boolean)
-      return `${i + 1}. ${r.activity}${[area?.name, crop?.name].filter(Boolean).length ? ` (${[area?.name, crop?.name].filter(Boolean).join(' - ')})` : ''}${r.staff.length ? ` - by ${r.staff.join(', ')}` : ''}${detailParts.length ? `\n   ${detailParts.join('; ')}` : ''}`
+      return `${i + 1}. ${r.activity}${[area?.name, cropNames.join(', ')].filter(Boolean).length ? ` (${[area?.name, cropNames.join(', ')].filter(Boolean).join(' - ')})` : ''}${r.staff.length ? ` - by ${r.staff.join(', ')}` : ''}${detailParts.length ? `\n   ${detailParts.join('; ')}` : ''}`
     })
     .join('\n')
 
@@ -73,7 +75,7 @@ export async function regenerateAndNotify(date: string) {
 
   const { data: rows, error } = await supabase
     .from('daily_updates')
-    .select('date, area_id, crop_id, activity, staff, weather, watering_details, fertilizer_applied, pesticide_applied, diseases_found, pest_issues, notes, photos')
+    .select('date, area_id, crop_id, crop_ids, activity, staff, weather, watering_details, fertilizer_applied, pesticide_applied, diseases_found, pest_issues, notes, photos')
     .eq('date', date)
   if (error || !rows || rows.length === 0) return
 

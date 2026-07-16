@@ -8,6 +8,7 @@ function toRow(u: Omit<DailyUpdate, 'id'>) {
     date: u.date,
     area_id: u.areaId || null,
     crop_id: u.cropId || null,
+    crop_ids: u.cropIds || [],
     activity: u.activity,
     staff: u.staff,
     weather: u.weather,
@@ -23,7 +24,7 @@ function toRow(u: Omit<DailyUpdate, 'id'>) {
 }
 
 function fromRow(row: {
-  id: string; date: string; area_id: string | null; crop_id: string | null; activity: string; staff: string[]
+  id: string; date: string; area_id: string | null; crop_id: string | null; crop_ids: string[] | null; activity: string; staff: string[]
   weather: string; watering_details: string; fertilizer_applied: string; pesticide_applied: string
   diseases_found: string; pest_issues: string; notes: string; photo_count: number; photos: string[]
 }): DailyUpdate {
@@ -32,6 +33,7 @@ function fromRow(row: {
     date: row.date,
     areaId: row.area_id,
     cropId: row.crop_id,
+    cropIds: row.crop_ids?.length ? row.crop_ids : row.crop_id ? [row.crop_id] : [],
     activity: row.activity,
     staff: row.staff || [],
     weather: row.weather,

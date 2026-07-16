@@ -14,13 +14,13 @@ import { DailySummarySection } from './DailySummarySection'
 const activityTypes = ['Watering', 'Fertilizing', 'Weeding', 'Pest control', 'Disease inspection', 'Pruning', 'Harvesting', 'Tunnel Photo Review']
 const staffOptions = ['R Thambiraja', 'W A A N Wijesooriya', 'N M G Dharmasena', 'W.G. Dissanayaka', 'Malar Kanthi', 'Richard']
 
-type UpdateForm = Omit<DailyUpdate, 'id' | 'areaId' | 'cropId' | 'photos'> & { areaId: string; cropId: string; photos: string[] }
+type UpdateForm = Omit<DailyUpdate, 'id' | 'areaId' | 'cropId' | 'cropIds' | 'photos'> & { areaId: string; cropIds: string[]; photos: string[] }
 
 function emptyForm(): UpdateForm {
   return {
     date: new Date().toISOString().slice(0, 10),
     areaId: areas[0].id,
-    cropId: areas[0].cropId,
+    cropIds: areas[0].cropId ? [areas[0].cropId] : [],
     activity: activityTypes[0],
     staff: [],
     weather: '',
@@ -122,7 +122,7 @@ export function UpdatesClient() {
   const filtered = useMemo(() => {
     return updates
       .filter((u) => filters.areaId === 'all' || u.areaId === filters.areaId)
-      .filter((u) => filters.cropId === 'all' || u.cropId === filters.cropId)
+      .filter((u) => filters.cropId === 'all' || u.cropIds?.includes(filters.cropId) || u.cropId === filters.cropId)
       .filter((u) => filters.staff === 'all' || u.staff.includes(filters.staff))
       .filter((u) => filters.activity === 'all' || u.activity === filters.activity)
       .filter((u) => !filters.date || u.date === filters.date)
@@ -152,6 +152,13 @@ export function UpdatesClient() {
     setForm((f) => ({
       ...f,
       staff: f.staff.includes(name) ? f.staff.filter((s) => s !== name) : [...f.staff, name],
+    }))
+  }
+
+  function toggleCrop(cropId: string) {
+    setForm((f) => ({
+      ...f,
+      cropIds: f.cropIds.includes(cropId) ? f.cropIds.filter((c) => c !== cropId) : [...f.cropIds, cropId],
     }))
   }
 
@@ -230,8 +237,9 @@ export function UpdatesClient() {
         )}
         {filtered.map((u) => {
           const area = areas.find((a) => a.id === u.areaId)
-          const crop = crops.find((c) => c.id === u.cropId)
-          const label = [area?.name, crop?.name].filter(Boolean).join(' · ')
+          const cropIdsForEntry = u.cropIds?.length ? u.cropIds : u.cropId ? [u.cropId] : []
+          const cropNames = cropIdsForEntry.map((id) => crops.find((c) => c.id === id)?.name).filter(Boolean)
+          const label = [area?.name, cropNames.join(', ')].filter(Boolean).join(' · ')
           return (
             <Card key={u.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -303,16 +311,28 @@ export function UpdatesClient() {
                 <span className="mb-1 block text-brand-700/60">Area</span>
                 <select className="w-full rounded-xl border border-brand-100 px-3 py-2" value={form.areaId} onChange={(e) => {
                   const area = areas.find((a) => a.id === e.target.value)
-                  setForm({ ...form, areaId: e.target.value, cropId: area?.cropId || form.cropId })
+                  setForm({ ...form, areaId: e.target.value, cropIds: area?.cropId ? [area.cropId] : form.cropIds })
                 }}>
                   {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-brand-700/60">Crop</span>
-                <select className="w-full rounded-xl border border-brand-100 px-3 py-2" value={form.cropId} onChange={(e) => setForm({ ...form, cropId: e.target.value })}>
-                  {crops.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+              <label className="text-sm sm:col-span-2">
+                <span className="mb-1 block text-brand-700/60">Crops - select any number</span>
+                <div className="flex flex-wrap gap-2">
+                  {crops.map((c) => (
+                    <button
+                      type="button"
+                      key={c.id}
+                      onClick={() => toggleCrop(c.id)}
+                      className={clsx(
+                        'rounded-full border px-3 py-1.5 text-xs font-medium',
+                        form.cropIds.includes(c.id) ? 'border-brand-600 bg-brand-600 text-white' : 'border-brand-100 text-brand-700/70',
+                      )}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
               </label>
               <label className="text-sm">
                 <span className="mb-1 block text-brand-700/60">Activity</span>
