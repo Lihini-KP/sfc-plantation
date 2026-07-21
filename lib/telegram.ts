@@ -57,7 +57,7 @@ export async function sendTelegramPhoto(dataUrl: string, caption?: string): Prom
   return !!data.ok
 }
 
-export async function sendTelegramDocument(bytes: Uint8Array, filename: string, caption?: string): Promise<{ ok: boolean; description?: string }> {
+export async function sendTelegramDocument(bytes: Uint8Array, filename: string, caption?: string): Promise<{ ok: boolean; messageId?: number; description?: string }> {
   const config = getConfig()
   if (!config) return { ok: false, description: 'Telegram not configured (missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID).' }
 
@@ -67,6 +67,25 @@ export async function sendTelegramDocument(bytes: Uint8Array, filename: string, 
   form.append('document', new Blob([Buffer.from(bytes)], { type: 'application/pdf' }), filename)
 
   const res = await fetch(`${TELEGRAM_API}/bot${config.token}/sendDocument`, { method: 'POST', body: form })
+  const data = await res.json().catch(() => ({ ok: false, description: `Telegram response was not JSON (HTTP ${res.status}).` }))
+  return { ok: !!data.ok, messageId: data.result?.message_id, description: data.description }
+}
+
+// Replaces the file attached to an already-sent document message (within
+// Telegram's ~48h edit window) instead of posting a new message - used to
+// keep one tunnel health report per day updated in place rather than
+// spamming a fresh PDF every time any tunnel is updated.
+export async function editTelegramDocument(messageId: number, bytes: Uint8Array, filename: string, caption?: string): Promise<{ ok: boolean; description?: string }> {
+  const config = getConfig()
+  if (!config) return { ok: false, description: 'Telegram not configured (missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID).' }
+
+  const form = new FormData()
+  form.append('chat_id', config.chatId)
+  form.append('message_id', String(messageId))
+  form.append('media', JSON.stringify({ type: 'document', media: 'attach://document', caption }))
+  form.append('document', new Blob([Buffer.from(bytes)], { type: 'application/pdf' }), filename)
+
+  const res = await fetch(`${TELEGRAM_API}/bot${config.token}/editMessageMedia`, { method: 'POST', body: form })
   const data = await res.json().catch(() => ({ ok: false, description: `Telegram response was not JSON (HTTP ${res.status}).` }))
   return { ok: !!data.ok, description: data.description }
 }

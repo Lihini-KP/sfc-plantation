@@ -3,7 +3,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { greenhouses } from '@/lib/mock-data'
 import { formatDate } from '@/lib/format'
-import { sendTelegramDocument } from '@/lib/telegram'
+import { sendTelegramDocument, editTelegramDocument } from '@/lib/telegram'
 
 interface TunnelLogRow {
   tunnel_id: string
@@ -138,10 +138,10 @@ async function buildReportPdf(entries: TunnelEntry[], reportText: string, dateLa
 }
 
 // Compiles the latest photo-inspection status for all 5 greenhouse tunnels
-// into a single PDF (write-up plus each tunnel's latest photo) and sends it
-// to the CropWatch Telegram group as a document - one fresh report per
-// trigger (a field officer's tunnel update), not edited in place, since it's
-// a point-in-time report rather than a running daily tally.
+// into a single PDF (write-up plus each tunnel's latest photo) and posts it
+// to the CropWatch Telegram group - one report per day, edited in place
+// (replacing the attached PDF on the same message) if any tunnel is updated
+// again later the same day, rather than posting a fresh document each time.
 export async function sendTunnelHealthReport() {
   const supabase = createSupabaseAdminClient()
 
@@ -158,9 +158,27 @@ export async function sendTunnelHealthReport() {
     })
   )
 
-  const dateLabel = formatDate(new Date().toISOString().slice(0, 10))
+  const today = new Date().toISOString().slice(0, 10)
+  const dateLabel = formatDate(today)
   const report = await writeReport(entries)
   const pdfBytes = await buildReportPdf(entries, report, dateLabel)
+  const filename = `Tunnel-Health-Report-${dateLabel.replace(/\s+/g, '-')}.pdf`
+  const caption = `Tunnel Health Report - ${dateLabel}`
 
-  return sendTelegramDocument(pdfBytes, `Tunnel-Health-Report-${dateLabel.replace(/\s+/g, '-')}.pdf`, `Tunnel Health Report - ${dateLabel}`)
+  const { data: existing } = await supabase.from('tunnel_reports').select('*').eq('date', today).maybeSingle()
+
+  let result: { ok: boolean; messageId?: number; description?: string }
+  if (existing?.telegram_message_id) {
+    const edited = await editTelegramDocument(existing.telegram_message_id, pdfBytes, filename, caption)
+    result = edited.ok ? { ok: true, messageId: existing.telegram_message_id } : await sendTelegramDocument(pdfBytes, filename, caption)
+  } else {
+    result = await sendTelegramDocument(pdfBytes, filename, caption)
+  }
+
+  await supabase.from('tunnel_reports').upsert({
+    date: today,
+    telegram_message_id: result.messageId ?? existing?.telegram_message_id ?? null,
+  })
+
+  return result
 }
