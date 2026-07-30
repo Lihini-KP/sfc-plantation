@@ -12,11 +12,14 @@ import { FinanceTrendChart } from '@/components/dashboard/FinanceTrendChart'
 import { LiveWeatherCard } from '@/components/dashboard/LiveWeatherCard'
 import { DashboardStatsGrid } from '@/components/dashboard/DashboardStatsGrid'
 import { getDashboardStats } from '@/lib/dashboard-stats'
-import { notifications, aiAnalyses, areas, crops } from '@/lib/mock-data'
+import { notifications, aiAnalyses } from '@/lib/mock-data'
+import { getAreas, getCrops } from '@/lib/data'
 import { formatCurrency, timeAgo } from '@/lib/format'
 
-export default function DashboardPage() {
-  const s = getDashboardStats()
+export default async function DashboardPage() {
+  const [s, areas, crops] = await Promise.all([
+    Promise.resolve(getDashboardStats()), getAreas(), getCrops(),
+  ])
   const unreadNotifications = notifications.filter((n) => !n.read).slice(0, 4)
   const topRecommendations = aiAnalyses
     .filter((a) => a.severity === 'high' || a.severity === 'critical' || a.severity === 'medium')

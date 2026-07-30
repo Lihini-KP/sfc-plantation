@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { greenhouses } from '@/lib/mock-data/greenhouses'
+import { getGreenhouses } from '@/lib/data'
 import { generateHartiJSON } from '@/lib/harti-ai'
 
 export const runtime = 'nodejs'
@@ -23,6 +23,7 @@ export async function POST(request: Request) {
   const body: { tunnelPhotoData?: TunnelPhotoSummary[] } = await request.json()
   const tunnelPhotoData = body.tunnelPhotoData || []
 
+  const greenhouses = await getGreenhouses()
   const tunnelFinancials = greenhouses.map((g) => ({
     tunnelId: g.id,
     tunnel: g.tunnel,

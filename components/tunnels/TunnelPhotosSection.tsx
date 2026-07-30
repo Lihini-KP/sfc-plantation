@@ -5,10 +5,9 @@ import { Upload, Sparkles, AlertTriangle, Loader2 } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { SeverityBadge } from '@/components/ui/Badge'
 import { getPhotoLogsForTunnel } from '@/lib/mock-data/tunnelPhotoLogs'
-import { crops } from '@/lib/mock-data/crops'
 import { useRole } from '@/lib/role-context'
 import { formatDate } from '@/lib/format'
-import type { TunnelPhotoEntry, Severity } from '@/lib/types'
+import type { TunnelPhotoEntry, Severity, Crop } from '@/lib/types'
 
 const STORAGE_PREFIX = 'sfc-tunnel-photos-'
 
@@ -19,7 +18,7 @@ interface AnalysisResult {
   severity: Severity
 }
 
-export function TunnelPhotosSection({ tunnelId, tunnelName, cropName }: { tunnelId: string; tunnelName: string; cropName: string }) {
+export function TunnelPhotosSection({ tunnelId, tunnelName, cropName, crops }: { tunnelId: string; tunnelName: string; cropName: string; crops: Crop[] }) {
   const { currentUser } = useRole()
   const seedLogs = getPhotoLogsForTunnel(tunnelId)
   const [serverLogs, setServerLogs] = useState<TunnelPhotoEntry[]>([])

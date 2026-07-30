@@ -5,9 +5,8 @@ import { Card } from '@/components/ui/Card'
 import { PriorityBadge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { tasks as initialTasks } from '@/lib/mock-data/tasks'
-import { areas } from '@/lib/mock-data/areas'
 import { formatDate } from '@/lib/format'
-import type { TaskStatus } from '@/lib/types'
+import type { TaskStatus, PlantationArea } from '@/lib/types'
 
 const columns: { key: TaskStatus; label: string }[] = [
   { key: 'pending', label: 'Pending' },
@@ -16,7 +15,7 @@ const columns: { key: TaskStatus; label: string }[] = [
   { key: 'completed', label: 'Completed' },
 ]
 
-export function TasksClient() {
+export function TasksClient({ areas }: { areas: PlantationArea[] }) {
   const [tasks, setTasks] = useState(initialTasks)
 
   function updateStatus(id: string, status: TaskStatus) {

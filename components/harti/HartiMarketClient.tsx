@@ -6,7 +6,7 @@ import {
   LayoutDashboard, TrendingUp, Scale, Tent, LineChart, Compass, FileText,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
-import { greenhouses } from '@/lib/mock-data/greenhouses'
+import type { GreenhousePlot } from '@/lib/mock-data/greenhouses'
 import { getPhotoLogsForTunnel } from '@/lib/mock-data/tunnelPhotoLogs'
 import { formatDate } from '@/lib/format'
 import { useRole } from '@/lib/role-context'
@@ -34,7 +34,7 @@ const TABS: TabDef<TabKey>[] = [
   { key: 'weeklyReports', label: 'Weekly Reports', icon: FileText },
 ]
 
-function gatherTunnelPhotoData() {
+function gatherTunnelPhotoData(greenhouses: GreenhousePlot[]) {
   return greenhouses.map((g) => {
     const seed = getPhotoLogsForTunnel(g.id)
     let local: TunnelPhotoEntry[] = []
@@ -63,7 +63,7 @@ function gatherTunnelPhotoData() {
   })
 }
 
-export function HartiMarketClient() {
+export function HartiMarketClient({ greenhouses }: { greenhouses: GreenhousePlot[] }) {
   const { role } = useRole()
   const isAdmin = role === 'Admin'
 
@@ -108,7 +108,7 @@ export function HartiMarketClient() {
     setRunError('')
     setSaveWarning('')
     try {
-      const tunnelPhotoData = gatherTunnelPhotoData()
+      const tunnelPhotoData = gatherTunnelPhotoData(greenhouses)
       const [marketRes, tunnelRes] = await Promise.all([
         fetch('/api/harti-analysis/market', { method: 'POST' }),
         fetch('/api/harti-analysis/tunnels', {

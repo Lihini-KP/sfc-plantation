@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Plus, X, Image as ImageIcon, Video, RefreshCw, AlertTriangle } from 'lucide-react'
 import clsx from 'clsx'
 import { Card, CardHeader } from '@/components/ui/Card'
-import { areas, crops, dailyUpdates as initialUpdates } from '@/lib/mock-data'
-import type { DailyUpdate } from '@/lib/types'
+import { dailyUpdates as initialUpdates } from '@/lib/mock-data'
+import type { DailyUpdate, PlantationArea, Crop } from '@/lib/types'
 import { formatDate } from '@/lib/format'
 import { fetchLiveWeather, type LiveWeather } from '@/lib/weather-api'
 import { ESTATE_LOCATION } from '@/lib/estate-config'
@@ -16,7 +16,7 @@ const staffOptions = ['R Thambiraja', 'W A A N Wijesooriya', 'N M G Dharmasena',
 
 type UpdateForm = Omit<DailyUpdate, 'id' | 'areaId' | 'cropId' | 'cropIds' | 'photos'> & { areaId: string; cropIds: string[]; photos: string[] }
 
-function emptyForm(): UpdateForm {
+function emptyForm(areas: PlantationArea[]): UpdateForm {
   return {
     date: new Date().toISOString().slice(0, 10),
     areaId: areas[0].id,
@@ -61,13 +61,13 @@ function compressImage(dataUrl: string, maxDimension = 1280, quality = 0.75): Pr
   })
 }
 
-export function UpdatesClient() {
+export function UpdatesClient({ areas, crops }: { areas: PlantationArea[]; crops: Crop[] }) {
   const [activeTab, setActiveTab] = useState<'log' | 'summary'>('log')
   const [updates, setUpdates] = useState<DailyUpdate[]>(initialUpdates)
   const [loadStatus, setLoadStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'saving' | 'error'>('idle')
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState(emptyForm())
+  const [form, setForm] = useState(emptyForm(areas))
   const [filters, setFilters] = useState({ areaId: 'all', cropId: 'all', staff: 'all', activity: 'all', date: '' })
   const [weatherStatus, setWeatherStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [liveWeather, setLiveWeather] = useState<LiveWeather | null>(null)
@@ -140,7 +140,7 @@ export function UpdatesClient() {
       const data = await res.json()
       if (!res.ok || !data.update) throw new Error(data.error || 'Save failed.')
       setUpdates((prev) => [data.update, ...prev])
-      setForm(emptyForm())
+      setForm(emptyForm(areas))
       setShowForm(false)
       setSubmitStatus('idle')
     } catch {

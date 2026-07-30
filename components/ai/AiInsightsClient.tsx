@@ -5,13 +5,12 @@ import { Sparkles, Send, TrendingUp, TrendingDown, Minus, CalendarCheck, Droplet
 import { Card, CardHeader } from '@/components/ui/Card'
 import { SeverityBadge } from '@/components/ui/Badge'
 import { ScoreRing, ProgressBar } from '@/components/ui/ProgressBar'
-import { areas } from '@/lib/mock-data/areas'
 import { aiAnalyses } from '@/lib/mock-data/aiInsights'
 import { chatHistory } from '@/lib/mock-data/aiInsights'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
-import type { ChatMessage } from '@/lib/types'
+import type { ChatMessage, PlantationArea } from '@/lib/types'
 
-export function AiInsightsClient() {
+export function AiInsightsClient({ areas }: { areas: PlantationArea[] }) {
   const [selectedAreaId, setSelectedAreaId] = useState(areas[0].id)
   const analysis = aiAnalyses.find((a) => a.areaId === selectedAreaId)!
   const area = areas.find((a) => a.id === selectedAreaId)!

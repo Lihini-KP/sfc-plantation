@@ -2,9 +2,10 @@ import Link from 'next/link'
 import { Tent, ArrowRight } from 'lucide-react'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { Card } from '@/components/ui/Card'
-import { greenhouses } from '@/lib/mock-data/greenhouses'
+import { getGreenhouses } from '@/lib/data'
 
-export default function TunnelsPage() {
+export default async function TunnelsPage() {
+  const greenhouses = await getGreenhouses()
   return (
     <PageContainer title="Tunnels">
       <Card className="border-brand-200 bg-brand-50">

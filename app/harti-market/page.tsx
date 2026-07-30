@@ -1,10 +1,12 @@
 import { PageContainer } from '@/components/layout/PageContainer'
 import { HartiMarketClient } from '@/components/harti/HartiMarketClient'
+import { getGreenhouses } from '@/lib/data'
 
-export default function HartiMarketPage() {
+export default async function HartiMarketPage() {
+  const greenhouses = await getGreenhouses()
   return (
     <PageContainer title="HARTI Market Intelligence">
-      <HartiMarketClient />
+      <HartiMarketClient greenhouses={greenhouses} />
     </PageContainer>
   )
 }

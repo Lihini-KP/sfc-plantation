@@ -6,15 +6,12 @@ import { X, MapPin, Sparkles, Building2, Pencil, ArrowRight } from 'lucide-react
 import { Card, CardHeader } from '@/components/ui/Card'
 import { HealthBadge, SeverityBadge } from '@/components/ui/Badge'
 import { ScoreRing } from '@/components/ui/ProgressBar'
-import { areas as baseAreas } from '@/lib/mock-data/areas'
-import { facilities } from '@/lib/mock-data/facilities'
-import { crops } from '@/lib/mock-data/crops'
 import { cropSales } from '@/lib/mock-data/cropSales'
 import { getAnalysisForArea } from '@/lib/mock-data/aiInsights'
-import { greenhouses } from '@/lib/mock-data/greenhouses'
 import { getPhotoLogsForTunnel } from '@/lib/mock-data/tunnelPhotoLogs'
 import { formatDate, formatCurrency } from '@/lib/format'
-import type { HealthStatus, PlantationArea, TunnelPhotoEntry } from '@/lib/types'
+import type { HealthStatus, PlantationArea, Crop, FacilityPoint, TunnelPhotoEntry } from '@/lib/types'
+import type { GreenhousePlot } from '@/lib/mock-data/greenhouses'
 
 const STORAGE_KEY = 'sfc-area-overrides'
 
@@ -91,7 +88,17 @@ function iconCountFor(width: number, height: number) {
 type Selection = { type: 'area' | 'facility'; id: string } | null
 type Overrides = Record<string, Partial<EditableFields>>
 
-export function MapClient() {
+export function MapClient({
+  areas: baseAreas,
+  facilities,
+  crops,
+  greenhouses,
+}: {
+  areas: PlantationArea[]
+  facilities: FacilityPoint[]
+  crops: Crop[]
+  greenhouses: GreenhousePlot[]
+}) {
   const [selection, setSelection] = useState<Selection>(null)
   const [overrides, setOverrides] = useState<Overrides>({})
   const [editing, setEditing] = useState(false)

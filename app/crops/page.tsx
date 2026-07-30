@@ -2,17 +2,19 @@ import { Leaf, TrendingUp, TrendingDown, Sprout } from 'lucide-react'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { Card, CardHeader } from '@/components/ui/Card'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { crops } from '@/lib/mock-data'
 import { totalIncomeByCrop } from '@/lib/mock-data/cropSales'
-import { greenhouses, totalGreenhouseRevenue, totalGreenhouseExpenses } from '@/lib/mock-data/greenhouses'
+import { getCrops, getGreenhouses, totalGreenhouseRevenue, totalGreenhouseExpenses } from '@/lib/data'
 import { formatCurrency, formatDate } from '@/lib/format'
 
 const annualPlanCropIds = new Set(['crop-hot-dragon', 'crop-muriya', 'crop-cucumber', 'crop-kakiri'])
 
-export default function CropsPage() {
+export default async function CropsPage() {
+  const [crops, greenhouses] = await Promise.all([getCrops(), getGreenhouses()])
   const unmappedCrops = totalIncomeByCrop().filter(
     (sale) => !crops.some((c) => sale.cropName.toLowerCase().includes(c.name.split(' ')[0].toLowerCase()))
   )
+  const greenhouseRevenue = totalGreenhouseRevenue(greenhouses)
+  const greenhouseExpenses = totalGreenhouseExpenses(greenhouses)
 
   return (
     <PageContainer title="Crop Management">
@@ -94,18 +96,18 @@ export default function CropsPage() {
         />
         <div className="mb-4 grid grid-cols-3 gap-3 text-center">
           <div className="rounded-xl bg-brand-50 p-3">
-            <p className="text-lg font-semibold text-brand-800">{formatCurrency(totalGreenhouseRevenue())}</p>
+            <p className="text-lg font-semibold text-brand-800">{formatCurrency(greenhouseRevenue)}</p>
             <p className="text-[11px] text-brand-700/50">Total Revenue (5 tunnels)</p>
           </div>
           <div className="rounded-xl bg-brand-50 p-3">
-            <p className="text-lg font-semibold text-brand-800">{formatCurrency(totalGreenhouseExpenses())}</p>
+            <p className="text-lg font-semibold text-brand-800">{formatCurrency(greenhouseExpenses)}</p>
             <p className="text-[11px] text-brand-700/50">Total Expenses</p>
           </div>
-          <div className={`rounded-xl p-3 ${totalGreenhouseRevenue() - totalGreenhouseExpenses() >= 0 ? 'bg-status-healthy/10' : 'bg-status-critical/10'}`}>
-            <p className={`text-lg font-semibold ${totalGreenhouseRevenue() - totalGreenhouseExpenses() >= 0 ? 'text-status-healthy' : 'text-status-critical'}`}>
-              {formatCurrency(Math.abs(totalGreenhouseRevenue() - totalGreenhouseExpenses()))}
+          <div className={`rounded-xl p-3 ${greenhouseRevenue - greenhouseExpenses >= 0 ? 'bg-status-healthy/10' : 'bg-status-critical/10'}`}>
+            <p className={`text-lg font-semibold ${greenhouseRevenue - greenhouseExpenses >= 0 ? 'text-status-healthy' : 'text-status-critical'}`}>
+              {formatCurrency(Math.abs(greenhouseRevenue - greenhouseExpenses))}
             </p>
-            <p className="text-[11px] text-brand-700/50">{totalGreenhouseRevenue() - totalGreenhouseExpenses() >= 0 ? 'Net Profit' : 'Net Loss'}</p>
+            <p className="text-[11px] text-brand-700/50">{greenhouseRevenue - greenhouseExpenses >= 0 ? 'Net Profit' : 'Net Loss'}</p>
           </div>
         </div>
         <div className="space-y-3">

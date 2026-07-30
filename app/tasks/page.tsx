@@ -1,8 +1,10 @@
 import { PageContainer } from '@/components/layout/PageContainer'
 import { Card } from '@/components/ui/Card'
 import { TasksClient } from '@/components/tasks/TasksClient'
+import { getAreas } from '@/lib/data'
 
-export default function TasksPage() {
+export default async function TasksPage() {
+  const areas = await getAreas()
   return (
     <PageContainer title="Task Management">
       <Card className="border-brand-200 bg-brand-50">
@@ -13,7 +15,7 @@ export default function TasksPage() {
           API connection - see the Crop Plan / integration work in progress).
         </p>
       </Card>
-      <TasksClient />
+      <TasksClient areas={areas} />
     </PageContainer>
   )
 }

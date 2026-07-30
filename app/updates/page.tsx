@@ -1,8 +1,10 @@
 import { PageContainer } from '@/components/layout/PageContainer'
 import { Card } from '@/components/ui/Card'
 import { UpdatesClient } from '@/components/updates/UpdatesClient'
+import { getAreas, getCrops } from '@/lib/data'
 
-export default function UpdatesPage() {
+export default async function UpdatesPage() {
+  const [areas, crops] = await Promise.all([getAreas(), getCrops()])
   return (
     <PageContainer title="Daily Plantation Updates">
       <Card className="border-brand-200 bg-brand-50">
@@ -11,7 +13,7 @@ export default function UpdatesPage() {
           entries logged here (with real live weather auto-filled) are real going forward.
         </p>
       </Card>
-      <UpdatesClient />
+      <UpdatesClient areas={areas} crops={crops} />
     </PageContainer>
   )
 }

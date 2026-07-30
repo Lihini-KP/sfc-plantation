@@ -6,6 +6,7 @@ import { Card, CardHeader } from '@/components/ui/Card'
 import { TunnelPhotosSection } from '@/components/tunnels/TunnelPhotosSection'
 import { formatCurrency, formatDate } from '@/lib/format'
 import type { GreenhousePlot } from '@/lib/mock-data/greenhouses'
+import type { Crop } from '@/lib/types'
 
 const tabs = [
   { key: 'overview', label: 'Overview', icon: Sprout },
@@ -18,7 +19,7 @@ const tabs = [
 
 type TabKey = typeof tabs[number]['key']
 
-export function TunnelDetailClient({ tunnel }: { tunnel: GreenhousePlot }) {
+export function TunnelDetailClient({ tunnel, crops }: { tunnel: GreenhousePlot; crops: Crop[] }) {
   const [tab, setTab] = useState<TabKey>('overview')
   const profit = tunnel.revenue - tunnel.totalExpenses
 
@@ -85,7 +86,7 @@ export function TunnelDetailClient({ tunnel }: { tunnel: GreenhousePlot }) {
         </div>
       )}
 
-      {tab === 'images' && <TunnelPhotosSection tunnelId={tunnel.id} tunnelName={tunnel.tunnel} cropName={tunnel.cropName} />}
+      {tab === 'images' && <TunnelPhotosSection tunnelId={tunnel.id} tunnelName={tunnel.tunnel} cropName={tunnel.cropName} crops={crops} />}
 
       {tab !== 'overview' && tab !== 'images' && (
         <Card>

@@ -1,7 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
-import { areas } from '@/lib/mock-data/areas'
-import { crops } from '@/lib/mock-data/crops'
+import { getAreas, getCrops } from '@/lib/data'
 import { aiAnalyses } from '@/lib/mock-data/aiInsights'
 
 export const runtime = 'nodejs'
@@ -20,6 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No question provided.' }, { status: 400 })
   }
 
+  const [areas, crops] = await Promise.all([getAreas(), getCrops()])
   const zoneContext = areas.map((a) => {
     const crop = crops.find((c) => c.id === a.cropId)
     const analysis = aiAnalyses.find((an) => an.areaId === a.id)
