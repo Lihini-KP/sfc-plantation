@@ -1,8 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
-import { areas, crops } from '@/lib/mock-data'
+import { getAreas, getCrops } from '@/lib/data'
 import { formatDate } from '@/lib/format'
 import { sendTelegramMessage, editTelegramMessage, sendTelegramPhoto } from '@/lib/telegram'
+import type { PlantationArea, Crop } from '@/lib/types'
 
 interface DailyUpdateRow {
   date: string
@@ -21,7 +22,7 @@ interface DailyUpdateRow {
   photos: string[] | null
 }
 
-async function writeSummary(rows: DailyUpdateRow[]): Promise<string> {
+async function writeSummary(rows: DailyUpdateRow[], areas: PlantationArea[], crops: Crop[]): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
 
   const plainList = rows
@@ -79,7 +80,8 @@ export async function regenerateAndNotify(date: string) {
     .eq('date', date)
   if (error || !rows || rows.length === 0) return
 
-  const summary = await writeSummary(rows as DailyUpdateRow[])
+  const [areas, crops] = await Promise.all([getAreas(), getCrops()])
+  const summary = await writeSummary(rows as DailyUpdateRow[], areas, crops)
   const allPhotos = rows.flatMap((r) => (r.photos as string[] | null) || [])
 
   const { data: existing } = await supabase.from('daily_summaries').select('*').eq('date', date).maybeSingle()

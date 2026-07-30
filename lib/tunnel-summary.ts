@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
-import { greenhouses } from '@/lib/mock-data'
+import { getGreenhouses } from '@/lib/data'
 import { formatDate } from '@/lib/format'
 import { sendTelegramDocument, editTelegramDocument } from '@/lib/telegram'
 
@@ -144,6 +144,7 @@ async function buildReportPdf(entries: TunnelEntry[], reportText: string, dateLa
 // again later the same day, rather than posting a fresh document each time.
 export async function sendTunnelHealthReport() {
   const supabase = createSupabaseAdminClient()
+  const greenhouses = await getGreenhouses()
 
   const entries = await Promise.all(
     greenhouses.map(async (g) => {

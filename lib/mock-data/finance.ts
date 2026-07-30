@@ -31,16 +31,6 @@ export function profitLoss(m: MonthlyFinance) {
   return m.income - m.expenses
 }
 
-export function totalExpenses() {
-  return monthlyFinance.reduce((s, m) => s + m.expenses, 0)
-}
-export function totalIncome() {
-  return monthlyFinance.reduce((s, m) => s + m.income, 0)
-}
-export function totalProfitLoss() {
-  return totalIncome() - totalExpenses()
-}
-
 // Bank account fund balance as recorded 2025-04-08.
 export const bankFund = { amount: 2150000, asOf: '2025-04-08' }
 
@@ -59,4 +49,18 @@ export const recentMonthlyDetail: MonthlyDetail[] = [
   { month: 'Mar 2026', totalExpenses: 228230.26, totalIncome: 188027.00, profitLoss: 188027.00 - 228230.26 },
   { month: 'Apr 2026', totalExpenses: 210677.66, totalIncome: 67663.25, profitLoss: 67663.25 - 210677.66 },
   { month: 'May 2026', totalExpenses: 208128.49, totalIncome: 49219.00, profitLoss: 49219.00 - 208128.49 },
+  { month: 'Jun 2026', totalExpenses: 301489.20, totalIncome: 70594.25, profitLoss: 70594.25 - 301489.20 },
 ]
+
+export function totalMonthsRecorded() {
+  return monthlyFinance.length + recentMonthlyDetail.length
+}
+export function totalExpenses() {
+  return monthlyFinance.reduce((s, m) => s + m.expenses, 0) + recentMonthlyDetail.reduce((s, m) => s + m.totalExpenses, 0)
+}
+export function totalIncome() {
+  return monthlyFinance.reduce((s, m) => s + m.income, 0) + recentMonthlyDetail.reduce((s, m) => s + m.totalIncome, 0)
+}
+export function totalProfitLoss() {
+  return totalIncome() - totalExpenses()
+}
