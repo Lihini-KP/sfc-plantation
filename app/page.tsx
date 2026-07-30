@@ -108,8 +108,11 @@ export default async function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader title="AI Recommendations" subtitle="Illustrative sample analysis - no real vision pipeline yet" action={<Sparkles size={18} className="text-brand-600" />} />
+          <CardHeader title="AI Recommendations" subtitle="No AI vision pipeline connected yet" action={<Sparkles size={18} className="text-brand-600" />} />
           <div className="space-y-3">
+            {topRecommendations.length === 0 && (
+              <p className="py-4 text-center text-sm text-brand-700/40">No AI analysis logged yet.</p>
+            )}
             {topRecommendations.map((a) => (
               <div key={a.areaId} className="rounded-xl border border-brand-100 p-3">
                 <div className="flex items-center justify-between">

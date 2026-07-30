@@ -172,9 +172,9 @@ export function MapClient({
     <div className="space-y-4">
       <Card className="border-brand-200 bg-brand-50">
         <p className="text-xs text-brand-700/70">
-          Zone positions, names and crops on this map reflect the estate&apos;s real layout. Health scores, disease/pest
-          findings and inspection details shown when you click a crop plot are <strong>illustrative sample data</strong> -
-          real values will come from actual field inspections and weekly AI photo analysis once the platform is live.
+          Zone positions, names, crops, and health/disease/pest status shown when you click a crop plot reflect the
+          estate&apos;s real records. An &quot;AI Summary&quot; only appears once a real weekly AI photo analysis has been
+          logged for that zone - no AI vision pipeline is connected yet, so most zones won&apos;t show one.
           Recorded sales figures (bottom of each crop panel) are real, from the P&amp;L Cultivation sheet.
         </p>
       </Card>

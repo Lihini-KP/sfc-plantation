@@ -12,7 +12,7 @@ import type { ChatMessage, PlantationArea } from '@/lib/types'
 
 export function AiInsightsClient({ areas }: { areas: PlantationArea[] }) {
   const [selectedAreaId, setSelectedAreaId] = useState(areas[0].id)
-  const analysis = aiAnalyses.find((a) => a.areaId === selectedAreaId)!
+  const analysis = aiAnalyses.find((a) => a.areaId === selectedAreaId)
   const area = areas.find((a) => a.id === selectedAreaId)!
 
   const [messages, setMessages] = useState<ChatMessage[]>(chatHistory)
@@ -44,15 +44,14 @@ export function AiInsightsClient({ areas }: { areas: PlantationArea[] }) {
     }
   }
 
-  const trendIcon = analysis.historicalComparison.trend === 'improving' ? TrendingUp : analysis.historicalComparison.trend === 'declining' ? TrendingDown : Minus
+  const trendIcon = analysis ? (analysis.historicalComparison.trend === 'improving' ? TrendingUp : analysis.historicalComparison.trend === 'declining' ? TrendingDown : Minus) : Minus
 
   return (
     <div className="space-y-6">
       <Card className="border-brand-200 bg-brand-50">
         <p className="text-xs text-brand-700/70">
-          These health scores, detected problems and predictions are <strong>illustrative sample analyses</strong> for this
-          prototype - not output from a real vision model yet. Once weekly area photos are wired up to an AI vision pipeline,
-          this page will show real detections instead.
+          No AI vision pipeline is connected yet - weekly area photos aren&apos;t being analyzed automatically. Health scores,
+          detected problems and predictions below only appear once a real analysis has been logged for a zone.
         </p>
       </Card>
       <div className="flex flex-wrap gap-2">
@@ -69,6 +68,12 @@ export function AiInsightsClient({ areas }: { areas: PlantationArea[] }) {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
+          {!analysis ? (
+            <Card>
+              <p className="py-8 text-center text-sm text-brand-700/40">No AI analysis logged yet for {area.name}.</p>
+            </Card>
+          ) : (
+          <>
           <Card>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -145,11 +150,13 @@ export function AiInsightsClient({ areas }: { areas: PlantationArea[] }) {
               {analysis.diseasePrevention.map((p) => <li key={p}>• {p}</li>)}
             </ul>
           </Card>
+          </>
+          )}
         </div>
 
         <Card className="flex h-[640px] flex-col">
           <CardHeader title="AI Chat Assistant" subtitle="Ask about any area, harvest timing, or fertilizer needs" />
-          <p className="mb-2 text-[10px] text-brand-700/40">Real Claude-powered answers, reasoning over the zone data on this page (which is still illustrative sample data, not live sensor readings).</p>
+          <p className="mb-2 text-[10px] text-brand-700/40">Real Claude-powered answers, reasoning over each zone&apos;s real plantation data (no AI vision analysis pipeline connected yet).</p>
           <div className="flex-1 space-y-3 overflow-y-auto pr-1">
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>

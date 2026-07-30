@@ -104,13 +104,15 @@ export function DashboardStatsGrid({
       lines: attentionAreas.length ? attentionAreas.map(areaLine) : ['No areas currently flagged.'],
     }),
     stat('harvestReadyAreas', 'Harvest Ready Areas', `${stats.harvestReadyAreas}`, Wheat, 'brand', undefined, {
-      lines: harvestReadyList.length ? harvestReadyList.map(areaLine) : ['No areas currently at 85%+ harvest readiness.'],
+      note: 'This figure was provided as an updated total on 2026-07-15. The list below only shows areas with a real logged AI analysis (none yet), so it will not match the figure above until real per-area analyses are logged.',
+      lines: harvestReadyList.length ? harvestReadyList.map(areaLine) : ['No areas with a real logged AI analysis at 85%+ harvest readiness yet.'],
     }),
     stat('upcomingHarvests', 'Upcoming Harvests', `${stats.upcomingHarvests}`, CalendarClock, 'earth', undefined, {
-      lines: upcomingHarvestList.length ? upcomingHarvestList.map(areaLine) : ['No harvests expected within 21 days.'],
+      note: 'This figure was provided as an updated total on 2026-07-15. The list below only shows areas with a real logged AI analysis (none yet), so it will not match the figure above until real per-area analyses are logged.',
+      lines: upcomingHarvestList.length ? upcomingHarvestList.map(areaLine) : ['No areas with a real logged AI analysis due within 21 days yet.'],
     }),
-    stat('weeklyProduction', 'Weekly Production Est. (AI)', `${stats.weeklyProductionEstimateKg} kg`, Gauge, 'brand', 'Illustrative forecast', {
-      lines: ['Sum of each area\'s AI-estimated yield, spread across its days-to-harvest - an illustrative estimate, not a measured figure.'],
+    stat('weeklyProduction', 'Weekly Production Est. (AI)', `${stats.weeklyProductionEstimateKg} kg`, Gauge, 'brand', 'No AI vision pipeline yet', {
+      lines: ['Would sum each area\'s AI-estimated yield, spread across its days-to-harvest, once a real AI vision pipeline is connected - currently 0 kg since no real analysis has been logged for any area.'],
     }),
     stat('activeTasks', 'Active Tasks', `${stats.activeTasks}`, ListChecks, 'earth', undefined, {
       lines: ['See Task Management for the full list of open tasks.'],
