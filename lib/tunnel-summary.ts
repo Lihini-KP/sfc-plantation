@@ -4,6 +4,10 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getGreenhouses } from '@/lib/data'
 import { formatDate } from '@/lib/format'
 import { sendTelegramDocument, editTelegramDocument } from '@/lib/telegram'
+import { reportAgentRun } from '@/lib/agent-report'
+import { pushTask } from '@/lib/atlas-task'
+
+const AGENT_KEY = 'plantation-tunnel-report'
 
 interface TunnelLogRow {
   tunnel_id: string
@@ -143,6 +147,40 @@ async function buildReportPdf(entries: TunnelEntry[], reportText: string, dateLa
 // (replacing the attached PDF on the same message) if any tunnel is updated
 // again later the same day, rather than posting a fresh document each time.
 export async function sendTunnelHealthReport() {
+  try {
+    const result = await buildAndSendTunnelHealthReport()
+    await reportAgentRun({
+      agent_key: AGENT_KEY,
+      status: result.ok ? 'success' : 'error',
+      summary: result.ok ? 'Tunnel health report sent/updated' : `Send failed: ${result.description || 'unknown error'}`,
+    })
+    if (!result.ok) {
+      await pushTask({
+        source: 'plantation-mgt',
+        title: 'Tunnel health report failed to send',
+        description: result.description || 'Telegram send failed for an unknown reason',
+        assignee: { email: 'hra@esilkroute.com.lk' },
+        dedup_key: `${AGENT_KEY}-failure`,
+        status: 'Pending',
+      })
+    }
+    return result
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    await reportAgentRun({ agent_key: AGENT_KEY, status: 'error', summary: message })
+    await pushTask({
+      source: 'plantation-mgt',
+      title: 'Tunnel health report failed to send',
+      description: message,
+      assignee: { email: 'hra@esilkroute.com.lk' },
+      dedup_key: `${AGENT_KEY}-failure`,
+      status: 'Pending',
+    })
+    throw err
+  }
+}
+
+async function buildAndSendTunnelHealthReport() {
   const supabase = createSupabaseAdminClient()
   const greenhouses = await getGreenhouses()
 

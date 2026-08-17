@@ -3,7 +3,11 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getAreas, getCrops } from '@/lib/data'
 import { formatDate } from '@/lib/format'
 import { sendTelegramMessage, editTelegramMessage, sendTelegramPhoto } from '@/lib/telegram'
+import { reportAgentRun } from '@/lib/agent-report'
+import { pushTask } from '@/lib/atlas-task'
 import type { PlantationArea, Crop } from '@/lib/types'
+
+const AGENT_KEY = 'plantation-daily-summary'
 
 interface DailyUpdateRow {
   date: string
@@ -72,40 +76,55 @@ ${plainList}`
 // today rather than posting a new one each time. Best-effort throughout:
 // callers should not let a failure here block saving the actual update.
 export async function regenerateAndNotify(date: string) {
-  const supabase = createSupabaseAdminClient()
+  try {
+    const supabase = createSupabaseAdminClient()
 
-  const { data: rows, error } = await supabase
-    .from('daily_updates')
-    .select('date, area_id, crop_id, crop_ids, activity, staff, weather, watering_details, fertilizer_applied, pesticide_applied, diseases_found, pest_issues, notes, photos')
-    .eq('date', date)
-  if (error || !rows || rows.length === 0) return
+    const { data: rows, error } = await supabase
+      .from('daily_updates')
+      .select('date, area_id, crop_id, crop_ids, activity, staff, weather, watering_details, fertilizer_applied, pesticide_applied, diseases_found, pest_issues, notes, photos')
+      .eq('date', date)
+    if (error || !rows || rows.length === 0) return
 
-  const [areas, crops] = await Promise.all([getAreas(), getCrops()])
-  const summary = await writeSummary(rows as DailyUpdateRow[], areas, crops)
-  const allPhotos = rows.flatMap((r) => (r.photos as string[] | null) || [])
+    const [areas, crops] = await Promise.all([getAreas(), getCrops()])
+    const summary = await writeSummary(rows as DailyUpdateRow[], areas, crops)
+    const allPhotos = rows.flatMap((r) => (r.photos as string[] | null) || [])
 
-  const { data: existing } = await supabase.from('daily_summaries').select('*').eq('date', date).maybeSingle()
-  const sentPhotos: string[] = existing?.sent_photo_urls || []
-  const newPhotos = allPhotos.filter((p) => !sentPhotos.includes(p))
+    const { data: existing } = await supabase.from('daily_summaries').select('*').eq('date', date).maybeSingle()
+    const sentPhotos: string[] = existing?.sent_photo_urls || []
+    const newPhotos = allPhotos.filter((p) => !sentPhotos.includes(p))
 
-  const messageText = `Daily Plantation Update - ${formatDate(date)}\n\n${summary}`
+    const messageText = `Daily Plantation Update - ${formatDate(date)}\n\n${summary}`
 
-  let telegramMessageId: number | null = existing?.telegram_message_id || null
-  if (telegramMessageId) {
-    const edited = await editTelegramMessage(telegramMessageId, messageText)
-    if (!edited) telegramMessageId = await sendTelegramMessage(messageText)
-  } else {
-    telegramMessageId = await sendTelegramMessage(messageText)
+    let telegramMessageId: number | null = existing?.telegram_message_id || null
+    if (telegramMessageId) {
+      const edited = await editTelegramMessage(telegramMessageId, messageText)
+      if (!edited) telegramMessageId = await sendTelegramMessage(messageText)
+    } else {
+      telegramMessageId = await sendTelegramMessage(messageText)
+    }
+
+    for (const photo of newPhotos.slice(0, 10)) {
+      await sendTelegramPhoto(photo)
+    }
+
+    await supabase.from('daily_summaries').upsert({
+      date,
+      summary,
+      telegram_message_id: telegramMessageId,
+      sent_photo_urls: [...sentPhotos, ...newPhotos],
+    })
+
+    await reportAgentRun({ agent_key: AGENT_KEY, status: 'success', summary: `Daily summary regenerated for ${date} (${rows.length} update${rows.length === 1 ? '' : 's'})` })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    await reportAgentRun({ agent_key: AGENT_KEY, status: 'error', summary: message })
+    await pushTask({
+      source: 'plantation-mgt',
+      title: `Daily summary failed to regenerate for ${date}`,
+      description: message,
+      assignee: { email: 'hra@esilkroute.com.lk' },
+      dedup_key: `${AGENT_KEY}-failure-${date}`,
+      status: 'Pending',
+    })
   }
-
-  for (const photo of newPhotos.slice(0, 10)) {
-    await sendTelegramPhoto(photo)
-  }
-
-  await supabase.from('daily_summaries').upsert({
-    date,
-    summary,
-    telegram_message_id: telegramMessageId,
-    sent_photo_urls: [...sentPhotos, ...newPhotos],
-  })
 }
