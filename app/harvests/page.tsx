@@ -5,7 +5,7 @@ import { StatCard } from '@/components/ui/StatCard'
 import { FinanceTrendChart } from '@/components/dashboard/FinanceTrendChart'
 import { HibiscusHarvestChart } from '@/components/harvests/HibiscusHarvestChart'
 import { cropSales, totalIncomeByCrop } from '@/lib/mock-data/cropSales'
-import { recentMonthlyDetail, totalIncome, totalExpenses } from '@/lib/mock-data/finance'
+import { recentMonthlyDetail, totalIncome, totalExpenses, totalMonthsRecorded } from '@/lib/mock-data/finance'
 import { hibiscusHarvestLog, totalHibiscusHarvested } from '@/lib/mock-data/hibiscusHarvestLog'
 import { projectHarvestPlan } from '@/lib/harvest-plan'
 import { formatCurrency, formatDate } from '@/lib/format'
@@ -14,6 +14,7 @@ export default function HarvestsPage() {
   const byCrop = totalIncomeByCrop()
   const recordedIncome = cropSales.reduce((s, r) => s + r.incomeRs, 0)
   const months = [...new Set(cropSales.map((r) => r.month))]
+  const monthsRecorded = totalMonthsRecorded()
   const hibiscusPlan = projectHarvestPlan(hibiscusHarvestLog.map((e) => e.date))
   const lowConfidenceCount = hibiscusHarvestLog.filter((e) => e.confidence === 'low').length
 
@@ -30,8 +31,8 @@ export default function HarvestsPage() {
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="Recorded Sales Income" value={formatCurrency(recordedIncome)} icon={Wheat} />
-        <StatCard label="Total Income (16mo)" value={formatCurrency(totalIncome())} icon={Coins} />
-        <StatCard label="Total Expenses (16mo)" value={formatCurrency(totalExpenses())} icon={TrendingUp} tone="warn" />
+        <StatCard label={`Total Income (${monthsRecorded}mo)`} value={formatCurrency(totalIncome())} icon={Coins} />
+        <StatCard label={`Total Expenses (${monthsRecorded}mo)`} value={formatCurrency(totalExpenses())} icon={TrendingUp} tone="warn" />
         <StatCard label="Distinct Crops Sold" value={`${byCrop.length}`} icon={TrendingDown} tone="earth" />
       </div>
 
