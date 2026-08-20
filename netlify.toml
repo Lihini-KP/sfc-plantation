@@ -12,7 +12,14 @@
 [functions."harti-weekly-cron"]
   schedule = "30 2 * * 1"
 
-# SPINE Connect-Kit §6 daily business pulse (SPINE task pulse-wire-plantation).
-# See netlify/functions/plantation-pulse.ts.
-[functions."plantation-pulse"]
-  schedule = "50 21 * * *"
+# NO Netlify scheduled function for the daily business pulse — removed
+# 2026-08-20 (was netlify/functions/plantation-pulse.ts / PR #3). Verified
+# on a sibling SFC app (same Netlify team) that scheduled functions here arm
+# but do not reliably invoke, and are not externally triggerable (403 on
+# both direct HTTP and the dashboard "Run now"), so a broken pulse would be
+# silent and unverifiable. The pulse is now app/api/automation/pulse/route.ts,
+# a plain Next.js API route driven by pg_cron net.http_post on SPINE's
+# SRV-Workspace Supabase project (yrztitqsjzdhamomrurl) — this app's own
+# Supabase project is on a different account with no MCP/CLI access from the
+# SPINE tooling side, so the cron job lives in SRV-Workspace instead and
+# calls out to this route over HTTPS. See CRON_SECRET in Netlify env.
