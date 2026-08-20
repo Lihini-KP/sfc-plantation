@@ -11,3 +11,8 @@
 # See netlify/functions/harti-weekly-cron.ts.
 [functions."harti-weekly-cron"]
   schedule = "30 2 * * 1"
+
+# SPINE Connect-Kit §6 daily business pulse (SPINE task pulse-wire-plantation).
+# See netlify/functions/plantation-pulse.ts.
+[functions."plantation-pulse"]
+  schedule = "50 21 * * *"
