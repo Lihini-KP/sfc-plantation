@@ -11,5 +11,5 @@ export function createSupabaseAdminClient() {
   if (!url || !key) {
     throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not configured.')
   }
-  return createClient(url, key, { auth: { persistSession: false } })
+  return createClient(url, key, { auth: { persistSession: false }, db: { schema: 'plantation' } })
 }
