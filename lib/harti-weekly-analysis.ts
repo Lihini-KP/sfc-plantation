@@ -43,7 +43,7 @@ async function getWeeklySource(): Promise<{ source: WeeklySource; usedFallback: 
     const reason = err instanceof Error ? err.message : 'Unknown fetch/parse error'
     const supabase = adminClient()
     const { data, error } = await supabase
-      .from('harti_weekly_source')
+      .from('plantation_harti_weekly_source')
       .select('*')
       .order('week_end', { ascending: false })
       .limit(1)
@@ -116,7 +116,7 @@ export async function generateAndSaveWeeklyAnalysis() {
   let saveWarning: string | undefined
 
   if (!usedFallback) {
-    const { error: sourceSaveError } = await supabase.from('harti_weekly_source').upsert({
+    const { error: sourceSaveError } = await supabase.from('plantation_harti_weekly_source').upsert({
       week_start: source.weekStart,
       week_end: source.weekEnd,
       bulletin_volume: source.bulletinVolume,
@@ -203,7 +203,7 @@ Rules:
 
   const analysis = await callClaude(systemPrompt, 'Generate this week\'s HARTI Passion Fruit and Moringa comparison now. Be extremely terse.', 1400)
 
-  const { error: analysisSaveError } = await supabase.from('harti_weekly_analysis').upsert({
+  const { error: analysisSaveError } = await supabase.from('plantation_harti_weekly_analysis').upsert({
     week_start: source.weekStart,
     week_end: source.weekEnd,
     analysis,

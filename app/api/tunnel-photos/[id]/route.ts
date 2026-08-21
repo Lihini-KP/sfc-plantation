@@ -22,7 +22,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const supabase = createSupabaseAdminClient()
   const { error } = await supabase
-    .from('tunnel_photo_logs')
+    .from('plantation_tunnel_photo_logs')
     .update({
       health_assessment: body.healthAssessment || null,
       detected_issues: body.detectedIssues || [],

@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 export async function GET() {
   const supabase = createSupabaseAdminClient()
   const { data, error } = await supabase
-    .from('harti_weekly_source')
+    .from('plantation_harti_weekly_source')
     .select('week_start, week_end, wholesale_avg_this_week')
     .order('week_start', { ascending: true })
 

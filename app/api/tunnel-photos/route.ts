@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
   const supabase = createSupabaseAdminClient()
   let query = supabase
-    .from('tunnel_photo_logs')
+    .from('plantation_tunnel_photo_logs')
     .select('id, tunnel_id, date, photos, health_assessment, detected_issues, recommended_actions, severity, analyzed_by')
     .order('date', { ascending: false })
 
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
   const supabase = createSupabaseAdminClient()
   const { data, error } = await supabase
-    .from('tunnel_photo_logs')
+    .from('plantation_tunnel_photo_logs')
     .insert({
       tunnel_id: body.tunnelId,
       date: body.date,

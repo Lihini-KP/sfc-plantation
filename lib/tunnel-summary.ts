@@ -187,7 +187,7 @@ async function buildAndSendTunnelHealthReport() {
   const entries = await Promise.all(
     greenhouses.map(async (g) => {
       const { data } = await supabase
-        .from('tunnel_photo_logs')
+        .from('plantation_tunnel_photo_logs')
         .select('tunnel_id, date, photos, health_assessment, severity')
         .eq('tunnel_id', g.id)
         .order('date', { ascending: false })
@@ -204,7 +204,7 @@ async function buildAndSendTunnelHealthReport() {
   const filename = `Tunnel-Health-Report-${dateLabel.replace(/\s+/g, '-')}.pdf`
   const caption = `Tunnel Health Report - ${dateLabel}`
 
-  const { data: existing } = await supabase.from('tunnel_reports').select('*').eq('date', today).maybeSingle()
+  const { data: existing } = await supabase.from('plantation_tunnel_reports').select('*').eq('date', today).maybeSingle()
 
   let result: { ok: boolean; messageId?: number; description?: string }
   if (existing?.telegram_message_id) {
@@ -214,7 +214,7 @@ async function buildAndSendTunnelHealthReport() {
     result = await sendTelegramDocument(pdfBytes, filename, caption)
   }
 
-  await supabase.from('tunnel_reports').upsert({
+  await supabase.from('plantation_tunnel_reports').upsert({
     date: today,
     telegram_message_id: result.messageId ?? existing?.telegram_message_id ?? null,
   })

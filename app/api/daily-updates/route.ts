@@ -56,7 +56,7 @@ export async function GET() {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Supabase not configured.' }, { status: 503 })
   }
 
-  const { data, error } = await supabase.from('daily_updates').select('*').order('date', { ascending: false })
+  const { data, error } = await supabase.from('plantation_daily_updates').select('*').order('date', { ascending: false })
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   const body: Omit<DailyUpdate, 'id'> = await request.json()
-  const { data, error } = await supabase.from('daily_updates').insert(toRow(body)).select().single()
+  const { data, error } = await supabase.from('plantation_daily_updates').insert(toRow(body)).select().single()
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

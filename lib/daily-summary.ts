@@ -80,7 +80,7 @@ export async function regenerateAndNotify(date: string) {
     const supabase = createSupabaseAdminClient()
 
     const { data: rows, error } = await supabase
-      .from('daily_updates')
+      .from('plantation_daily_updates')
       .select('date, area_id, crop_id, crop_ids, activity, staff, weather, watering_details, fertilizer_applied, pesticide_applied, diseases_found, pest_issues, notes, photos')
       .eq('date', date)
     if (error || !rows || rows.length === 0) return
@@ -89,7 +89,7 @@ export async function regenerateAndNotify(date: string) {
     const summary = await writeSummary(rows as DailyUpdateRow[], areas, crops)
     const allPhotos = rows.flatMap((r) => (r.photos as string[] | null) || [])
 
-    const { data: existing } = await supabase.from('daily_summaries').select('*').eq('date', date).maybeSingle()
+    const { data: existing } = await supabase.from('plantation_daily_summaries').select('*').eq('date', date).maybeSingle()
     const sentPhotos: string[] = existing?.sent_photo_urls || []
     const newPhotos = allPhotos.filter((p) => !sentPhotos.includes(p))
 
@@ -107,7 +107,7 @@ export async function regenerateAndNotify(date: string) {
       await sendTelegramPhoto(photo)
     }
 
-    await supabase.from('daily_summaries').upsert({
+    await supabase.from('plantation_daily_summaries').upsert({
       date,
       summary,
       telegram_message_id: telegramMessageId,

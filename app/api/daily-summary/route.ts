@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 export async function GET() {
   const supabase = createSupabaseAdminClient()
   const { data, error } = await supabase
-    .from('daily_summaries')
+    .from('plantation_daily_summaries')
     .select('date, summary, telegram_message_id, sent_photo_urls, generated_at')
     .order('date', { ascending: false })
 

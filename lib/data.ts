@@ -12,7 +12,7 @@ import type { CropPlanRecord } from '@/lib/mock-data/cropPlan'
 
 export async function getCrops(): Promise<Crop[]> {
   const supabase = createSupabaseAdminClient()
-  const { data, error } = await supabase.from('crops').select('*').order('id')
+  const { data, error } = await supabase.from('plantation_crops').select('*').order('id')
   if (error || !data) return []
   return data.map((c) => ({
     id: c.id,
@@ -35,7 +35,7 @@ export async function getCrops(): Promise<Crop[]> {
 
 export async function getAreas(): Promise<PlantationArea[]> {
   const supabase = createSupabaseAdminClient()
-  const { data, error } = await supabase.from('plantation_areas').select('*').order('id')
+  const { data, error } = await supabase.from('plantation_plantation_areas').select('*').order('id')
   if (error || !data) return []
   return data.map((a) => ({
     id: a.id,
@@ -62,7 +62,7 @@ export async function getAreas(): Promise<PlantationArea[]> {
 
 export async function getFacilities(): Promise<FacilityPoint[]> {
   const supabase = createSupabaseAdminClient()
-  const { data, error } = await supabase.from('facilities').select('*').order('id')
+  const { data, error } = await supabase.from('plantation_facilities').select('*').order('id')
   if (error || !data) return []
   return data.map((f) => ({
     id: f.id,
@@ -75,7 +75,7 @@ export async function getFacilities(): Promise<FacilityPoint[]> {
 
 export async function getGreenhouses(): Promise<GreenhousePlot[]> {
   const supabase = createSupabaseAdminClient()
-  const { data, error } = await supabase.from('greenhouses').select('*').order('id')
+  const { data, error } = await supabase.from('plantation_greenhouses').select('*').order('id')
   if (error || !data) return []
   return data.map((g) => ({
     id: g.id,
@@ -95,7 +95,7 @@ export async function getGreenhouses(): Promise<GreenhousePlot[]> {
 
 export async function getCropPlan(): Promise<CropPlanRecord[]> {
   const supabase = createSupabaseAdminClient()
-  const { data, error } = await supabase.from('crop_plan').select('*').order('id')
+  const { data, error } = await supabase.from('plantation_crop_plan').select('*').order('id')
   if (error || !data) return []
   return data.map((c) => ({
     id: c.id,

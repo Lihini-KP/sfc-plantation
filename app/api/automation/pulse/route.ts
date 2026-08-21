@@ -64,7 +64,7 @@ async function runPulse(): Promise<NextResponse> {
   try {
     const supabase = createSupabaseAdminClient()
     const { data, error: qErr } = await supabase
-      .from('daily_updates')
+      .from('plantation_daily_updates')
       .select('id, staff, photo_count, photos, activity')
       .eq('date', dateStr)
       .returns<DailyUpdateRow[]>()

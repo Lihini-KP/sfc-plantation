@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   const supabase = createSupabaseAdminClient()
   const { data, error } = await supabase
-    .from('harti_weekly_analysis')
+    .from('plantation_harti_weekly_analysis')
     .select('week_start, week_end, analysis, generated_at')
     .order('week_end', { ascending: false })
     .limit(limit)
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   }
 
   const supabase = createSupabaseAdminClient()
-  const { error } = await supabase.from('harti_weekly_analysis').upsert({
+  const { error } = await supabase.from('plantation_harti_weekly_analysis').upsert({
     week_start: body.weekStart,
     week_end: body.weekEnd,
     analysis: body.analysis,
